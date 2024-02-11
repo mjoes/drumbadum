@@ -8,26 +8,19 @@ using namespace std;
 int main() {
     // Define parameters for the waveform
     uint16_t frequency = 440; // Example frequency
-    uint16_t decay = 20000;     // Example decay
-    uint16_t tone = 30000;      // Example tone
-    uint16_t punch = 40000;     // Example punch
-    uint16_t duration = 1;
+    uint16_t decay = 10;     // Example decay
+    uint16_t duration = 2;
     uint16_t sample_rate = 48000;
-
-    // Initialize BassDrum processor
-    BassDrum bass_drum;
-    bass_drum.Init();
-
-    // Set parameters for the BassDrum processor
-    bass_drum.set_frequency(frequency);
-    bass_drum.set_decay(decay);
-    bass_drum.set_tone(tone);
-    bass_drum.set_punch(punch);
-
-    // Generate waveform samples and store them in a buffer
-    const size_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
+    size_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples];
 
+    // Initialize and define BassDrum processor
+    BassDrum bass_drum;
+    bass_drum.Init(sample_rate);
+    bass_drum.set_frequency(frequency);
+    bass_drum.set_decay(decay);
+
+    // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
         // Generate waveform sample
         bass_drum.Process(1, &samples[i], 1);
