@@ -7,10 +7,12 @@ using namespace std;
 
 int main() {
     // Define parameters for the waveform
-    uint16_t frequency = 10000; // Example frequency
+    uint16_t frequency = 440; // Example frequency
     uint16_t decay = 20000;     // Example decay
     uint16_t tone = 30000;      // Example tone
     uint16_t punch = 40000;     // Example punch
+    uint16_t duration = 1;
+    uint16_t sample_rate = 48000;
 
     // Initialize BassDrum processor
     BassDrum bass_drum;
@@ -23,7 +25,7 @@ int main() {
     bass_drum.set_punch(punch);
 
     // Generate waveform samples and store them in a buffer
-    const size_t num_samples = 48000; // Number of samples (assuming 1 second at 48kHz)
+    const size_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples];
 
     for (size_t i = 0; i < num_samples; ++i) {

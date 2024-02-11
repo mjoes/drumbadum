@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cmath>
+#include <stdio.h>
 
 class BassDrum {
 public:
@@ -29,7 +30,7 @@ public:
     void Process(const uint8_t gate_flag, int16_t* output, size_t size) {
         for (size_t i = 0; i < size; ++i) {
             // Generate waveform sample
-            int32_t sample = GenerateSample(gate_flag);
+            int16_t sample = GenerateSample(gate_flag, i);
             // Clip sample if necessary
             output[i] = static_cast<int16_t>(sample);
         }
@@ -41,22 +42,15 @@ private:
     uint16_t tone_;
     uint16_t punch_;
 
-    int32_t GenerateSample(uint8_t gate_flag) {
+    size_t start = 0;
+    int32_t GenerateSample(uint8_t gate_flag, size_t size) {
         int32_t sample = 0;
+        float phase_ = static_cast<float>(frequency_) * (2.0f * 3.14159f) / 48000.0f;
         if (gate_flag) {
-            // Generate waveform sample based on parameters
             // Replace this with your own waveform generation logic
-            // This is a simplified example
-            // You may want to use wavetables or other synthesis techniques
-            // This example generates a simple sine wave
-            sample = static_cast<int32_t>(32767.0f * sin(phase_));
-            phase_ += static_cast<float>(frequency_) * (2.0f * 3.14159f) / 48000.0f;
-            if (phase_ >= 2.0f * 3.14159f) {
-                phase_ -= 2.0f * 3.14159f;
-            }
+            sample = static_cast<int32_t>(30000.0f * sin(phase_ * start) );
+            start += 1;
         }
         return sample;
     }
-
-    float phase_ = 0.0f; // Phase accumulator for waveform generation
 };
