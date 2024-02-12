@@ -1,13 +1,13 @@
 #include <iostream>
 #include <fstream>
-
+#include <plot.h>
 #include "drums/bass_drum.h"
 
 using namespace std;
 
 int main() {
     // Define parameters for the waveform
-    uint16_t frequency = 440; // Example frequency
+    uint16_t frequency = 40; // Example frequency
     uint16_t decay = 10;     // Example decay
     uint16_t duration = 2;
     uint16_t sample_rate = 48000;
@@ -36,6 +36,13 @@ int main() {
         cerr << "Error: Unable to open file for writing!" << endl;
         return 1;
     }
+    // Plot buffer
+    ofstream dataFile("output.txt");
+    for (size_t i = 0; i < num_samples; ++i) {
+        dataFile << static_cast<float>(i)/sample_rate << " " << samples[i]/32767.0f << "\n";
+    }
+    cout << "Data written to output.txt" << endl;
+    dataFile.close();
 
     return 0;
 }
