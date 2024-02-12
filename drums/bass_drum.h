@@ -9,13 +9,13 @@ public:
 
     void Init(
         uint16_t sample_rate, 
-        size_t start = 0, 
+        size_t rel_pos_ = 0, 
         float out = 0.0f, 
         float seg_tmp = 0.0f, 
         uint8_t segment = 1) 
     {
         sample_rate_ = sample_rate;
-        start_ = start;
+        rel_pos_ = rel_pos_;
         out_ = out;
         seg_tmp_ = seg_tmp;
         segment_ = segment;
@@ -31,7 +31,7 @@ public:
     }
 
     void set_start(size_t start) {
-        start_ = 0;
+        rel_pos_ = 0;
         start_i_ = start;
         end_i_ = start + lengthHit();
     }
@@ -39,10 +39,11 @@ public:
     void Process(int16_t* output, size_t it) {
         // Generate waveform sample
         if (it > start_i_ && it < end_i_) {
-            int16_t sample = GenerateSample();
-            float env = GenerateEnv();
+            int16_t sample = GenerateSample(rel_pos_);
+            float env = GenerateEnv(rel_pos_);
             int16_t out_val = static_cast<int16_t>(sample * env);
-            start_ += 1;
+            rel_pos_ += 1;
+
             // Clip sample if necessary
             output[0] = out_val;                
         }
@@ -54,31 +55,31 @@ private:
     uint8_t cross_fade_;
     uint16_t decay_;
     uint16_t sample_rate_;
-    size_t start_;
+    size_t rel_pos_;
     size_t start_i_;
     size_t end_i_;
     float out_;
     float seg_tmp_;
     uint8_t segment_;
     
-    int32_t GenerateSample() {
+    int32_t GenerateSample(size_t rel_pos_samp) {
         // Replace this with your own waveform generation logic
-        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * start_)); // 32767 is for PCM waves
+        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp)); // 32767 is for PCM waves
         return sample;
     }
 
-    float GenerateEnv() {
-        float start_tmp = static_cast<float>(start_)/sample_rate_;
+    float GenerateEnv(size_t rel_pos_env) {
+        float rel_pos_tmp = static_cast<float>(rel_pos_env)/sample_rate_;
         switch (segment_) {
             case 1: 
-                out_ = 10.0f * start_tmp;
+                out_ = 10.0f * rel_pos_tmp;
                 if (out_ >= 1) {
                     segment_ = 2;
-                    seg_tmp_ = start_tmp;
+                    seg_tmp_ = rel_pos_tmp;
                 }
                 break;
             case 2:
-                out_ = 1.0f * exp(-decay_ * (start_tmp-seg_tmp_));
+                out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
                 if (out_ <= 1e-4) {
                     segment_ = 3;
                 }
