@@ -7,12 +7,18 @@ public:
     BassDrum() {}
     ~BassDrum() {}
 
-    void Init(uint16_t sample_rate) {
+    void Init(
+        uint16_t sample_rate, 
+        size_t start = 0, 
+        float out = 0.0f, 
+        float seg_tmp = 0.0f, 
+        uint8_t segment = 1) 
+    {
         sample_rate_ = sample_rate;
-        start_ = 0;
-        out_ = 0.0f;
-        seg_tmp_ = 0.0f;
-        segment_ = 1;
+        start_ = start;
+        out_ = out;
+        seg_tmp_ = seg_tmp;
+        segment_ = segment;
     }
 
     void set_frequency(uint16_t frequency) {
@@ -24,14 +30,22 @@ public:
         decay_ = decay;
     }
 
-    void Process(const uint8_t gate_flag, int16_t* output, size_t size) {
+    void set_start(size_t start) {
+        start_ = 0;
+        start_i_ = start;
+        end_i_ = start + lengthHit();
+    }
+
+    void Process(const uint8_t gate_flag, int16_t* output, size_t size, size_t it) {
         for (size_t i = 0; i < size; ++i) {
             // Generate waveform sample
-            int16_t sample = GenerateSample(gate_flag, i);
-            float env = GenerateEnv(gate_flag, i);
-            start_ += 1;
-            // Clip sample if necessary
-            output[i] = static_cast<int16_t>(sample * env);
+            if (it > start_i_ && it < end_i_) {
+                int16_t sample = GenerateSample(gate_flag, i);
+                float env = GenerateEnv(gate_flag, i);
+                start_ += 1;
+                // Clip sample if necessary
+                output[i] = static_cast<int16_t>(sample * env);
+            }
         }
     }
 
@@ -41,6 +55,8 @@ private:
     uint16_t decay_;
     uint16_t sample_rate_;
     size_t start_;
+    size_t start_i_;
+    size_t end_i_;
     float out_;
     float seg_tmp_;
     uint8_t segment_;
@@ -77,5 +93,12 @@ private:
             }
         }
         return out_;
+    }
+
+    uint16_t lengthHit() {
+        uint16_t segment_1= (1.0f/10.0) * sample_rate_;
+        uint16_t segment_2= (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
+        uint16_t total = (segment_1+segment_2) * 1.1;
+        return total;
     }
 };

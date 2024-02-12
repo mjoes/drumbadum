@@ -13,8 +13,10 @@ int main(int argc, char** argv) {
     uint16_t decay = atoi(argv[ARG_DECAY]);     // Example decay
     uint16_t duration = atoi(argv[ARG_DUR]);
     uint16_t sample_rate = 48000;
-    size_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
-    int16_t samples[num_samples];
+    uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
+    int16_t samples[num_samples] = {0};
+    bool trig;
+    uint16_t trig_BD[3] = {10000, 20000, 48000}; // Dummy triggers sample nr
 
     // Initialize and define BassDrum processor
     BassDrum bass_drum;
@@ -24,8 +26,21 @@ int main(int argc, char** argv) {
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
+        // Check if trigger is hit
+        for(int j = 0; j < static_cast<int>(sizeof(trig_BD) / sizeof(trig_BD[0])); j++){
+            if (trig_BD[j] == i){
+                trig = 1;
+            }
+        }
+
         // Generate waveform sample
-        bass_drum.Process(1, &samples[i], 1);
+        if (trig == 1) {
+            bass_drum.Init(sample_rate);
+            bass_drum.set_start(i);
+        }
+        bass_drum.Process(1, &samples[i], 1, i);
+
+        trig = 0;
     }
 
     // Write buffer to a raw file
@@ -39,8 +54,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     // Plot buffer
-    ofstream dataFile("output.txt");
-    for (size_t i = 0; i < num_samples; ++i) {
+    ofstream dataFile("output.txt", std::ofstream::out | std::ofstream::trunc);
+    for (uint32_t i = 0; i < num_samples; ++i) {
         dataFile << static_cast<float>(i)/sample_rate << " " << samples[i]/32767.0f << "\n";
     }
     cout << "Data written to output.txt" << endl;
