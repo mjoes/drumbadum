@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
             bass_drum.Init(sample_rate);
             bass_drum.set_start(i);
         }
-        bass_drum.Process(1, &samples[i], 1, i);
+        bass_drum.Process(&samples[i], i);
 
         trig = 0;
     }

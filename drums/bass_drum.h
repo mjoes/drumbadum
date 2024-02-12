@@ -36,22 +36,22 @@ public:
         end_i_ = start + lengthHit();
     }
 
-    void Process(const uint8_t gate_flag, int16_t* output, size_t size, size_t it) {
-        for (size_t i = 0; i < size; ++i) {
-            // Generate waveform sample
-            if (it > start_i_ && it < end_i_) {
-                int16_t sample = GenerateSample(gate_flag, i);
-                float env = GenerateEnv(gate_flag, i);
-                start_ += 1;
-                // Clip sample if necessary
-                output[i] = static_cast<int16_t>(sample * env);
-            }
+    void Process(int16_t* output, size_t it) {
+        // Generate waveform sample
+        if (it > start_i_ && it < end_i_) {
+            int16_t sample = GenerateSample();
+            float env = GenerateEnv();
+            int16_t out_val = static_cast<int16_t>(sample * env);
+            start_ += 1;
+            // Clip sample if necessary
+            output[0] = out_val;                
         }
     }
 
 private:
     uint16_t frequency_;
     float phase_;
+    uint8_t cross_fade_;
     uint16_t decay_;
     uint16_t sample_rate_;
     size_t start_;
@@ -61,37 +61,33 @@ private:
     float seg_tmp_;
     uint8_t segment_;
     
-    int32_t GenerateSample(uint8_t gate_flag, size_t size) {
-        int32_t sample = 0;
-        if (gate_flag) {
-            // Replace this with your own waveform generation logic
-            sample = static_cast<int32_t>(32767.0f * sin(phase_ * start_)); // 32767 is for PCM waves
-        }
+    int32_t GenerateSample() {
+        // Replace this with your own waveform generation logic
+        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * start_)); // 32767 is for PCM waves
         return sample;
     }
 
-    float GenerateEnv(uint8_t gate_flag, size_t size) {
+    float GenerateEnv() {
         float start_tmp = static_cast<float>(start_)/sample_rate_;
-        if (gate_flag) {
-            switch (segment_) {
-                case 1: 
-                    out_ = 10.0f * start_tmp;
-                    if (out_ >= 1) {
-                        segment_ = 2;
-                        seg_tmp_ = start_tmp;
-                    }
-                    break;
-                case 2:
-                    out_ = 1.0f * exp(-decay_ * (start_tmp-seg_tmp_));
-                    if (out_ <= 1e-4) {
-                        segment_ = 3;
-                    }
-                    break;
-                case 3:
-                    out_ = 0.0f;
-                    break;
-            }
+        switch (segment_) {
+            case 1: 
+                out_ = 10.0f * start_tmp;
+                if (out_ >= 1) {
+                    segment_ = 2;
+                    seg_tmp_ = start_tmp;
+                }
+                break;
+            case 2:
+                out_ = 1.0f * exp(-decay_ * (start_tmp-seg_tmp_));
+                if (out_ <= 1e-4) {
+                    segment_ = 3;
+                }
+                break;
+            case 3:
+                out_ = 0.0f;
+                break;
         }
+    
         return out_;
     }
 
