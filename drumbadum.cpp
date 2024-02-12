@@ -5,11 +5,13 @@
 
 using namespace std;
 
-int main() {
+enum {ARG_NAME,ARG_FREQUENCY,ARG_DECAY,ARG_DUR,ARG_NARGS};
+
+int main(int argc, char** argv) {
     // Define parameters for the waveform
-    uint16_t frequency = 40; // Example frequency
-    uint16_t decay = 10;     // Example decay
-    uint16_t duration = 2;
+    uint16_t frequency = atoi(argv[ARG_FREQUENCY]); // Example frequency
+    uint16_t decay = atoi(argv[ARG_DECAY]);     // Example decay
+    uint16_t duration = atoi(argv[ARG_DUR]);
     uint16_t sample_rate = 48000;
     size_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples];
