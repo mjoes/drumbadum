@@ -1,11 +1,14 @@
 #include <cstdint>
 #include <cmath>
 #include <stdio.h>
+#include <random>
 
-class BassDrum {
+using namespace std;
+
+class SnareDrum {
 public:
-    BassDrum() {}
-    ~BassDrum() {}
+    SnareDrum() : rd(), gen(rd()), dis(-32767, 32767) {}
+    ~SnareDrum() {}
 
     void Init(
         uint16_t sample_rate, 
@@ -62,30 +65,27 @@ private:
     float out_;
     float seg_tmp_;
     uint8_t segment_;
+
+    random_device rd;
+    mt19937 gen;
+    uniform_int_distribution<int32_t> dis;
     
     int32_t GenerateSample(size_t rel_pos_samp) {
         // Replace this with your own waveform generation logic
-        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp)); // 32767 is for PCM waves
+        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp))+dis(gen); // 32767 is for PCM waves
         return sample;
     }
 
     float GenerateEnv(size_t rel_pos_env) {
         float rel_pos_tmp = static_cast<float>(rel_pos_env)/sample_rate_;
         switch (segment_) {
-            case 1: 
-                out_ = 10.0f * rel_pos_tmp;
-                if (out_ >= 1) {
+            case 1:
+                out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
+                if (out_ <= 1e-4) {
                     segment_ = 2;
-                    seg_tmp_ = rel_pos_tmp;
                 }
                 break;
             case 2:
-                out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
-                if (out_ <= 1e-4) {
-                    segment_ = 3;
-                }
-                break;
-            case 3:
                 out_ = 0.0f;
                 break;
         }
@@ -94,9 +94,8 @@ private:
     }
 
     uint16_t lengthHit() {
-        uint16_t segment_1= (1.0f/10.0) * sample_rate_;
-        uint16_t segment_2= (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
-        uint16_t total = (segment_1+segment_2) * 1.1;
+        uint16_t segment_1 = (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
+        uint16_t total = (segment_1) * 1.1;
         return total;
     }
 };
