@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     bool t_BD;
     bool t_HH;
     uint16_t trig_BD[2] = {10000, 60000}; // Dummy triggers sample nr
-    uint16_t trig_HH[1] = {30000}; // Dummy triggers sample nr
+    uint16_t trig_HH[2] = {30000, 60000}; // Dummy triggers sample nr
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat;
@@ -47,8 +47,7 @@ int main(int argc, char** argv) {
         }
         if (t_HH == 1) {
             hi_hat.Init(sample_rate);
-            hi_hat.set_frequency(frequency);
-            hi_hat.set_decay(decay);
+            hi_hat.set_decay(decay*10);
             hi_hat.set_start(i);
         }
         samples[i] = (bass_drum.Process(i) + hi_hat.Process(i))/2;

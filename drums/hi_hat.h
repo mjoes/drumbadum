@@ -1,6 +1,12 @@
 #include <cstdint>
 #include <cmath>
 #include <stdio.h>
+#include <random>
+
+using namespace std;
+random_device rd;
+mt19937 gen(rd());
+uniform_int_distribution<int32_t> dis(-32767, 32767);
 
 class HiHat {
 public:
@@ -21,11 +27,6 @@ public:
         segment_ = segment;
     }
 
-    void set_frequency(uint16_t frequency) {
-        frequency_ = frequency;
-        phase_ = static_cast<float>(frequency_) * (2.0f * 3.14159f) / sample_rate_;
-    }
-
     void set_decay(uint16_t decay) {
         decay_ = decay;
     }
@@ -39,7 +40,7 @@ public:
     int16_t Process(size_t it) {
         // Generate waveform sample
         if (it > start_i_ && it < end_i_) {
-            int16_t sample = GenerateSample(rel_pos_);
+            int16_t sample = GenerateSample();
             float env = GenerateEnv(rel_pos_);
             int16_t out_val = static_cast<int16_t>(sample * env);
             rel_pos_ += 1;
@@ -63,29 +64,22 @@ private:
     float seg_tmp_;
     uint8_t segment_;
     
-    int32_t GenerateSample(size_t rel_pos_samp) {
+    int32_t GenerateSample() {
         // Replace this with your own waveform generation logic
-        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp)); // 32767 is for PCM waves
+        int32_t sample = dis(gen);
         return sample;
     }
 
     float GenerateEnv(size_t rel_pos_env) {
         float rel_pos_tmp = static_cast<float>(rel_pos_env)/sample_rate_;
         switch (segment_) {
-            case 1: 
-                out_ = 10.0f * rel_pos_tmp;
-                if (out_ >= 1) {
+            case 1:
+                out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
+                if (out_ <= 1e-4) {
                     segment_ = 2;
-                    seg_tmp_ = rel_pos_tmp;
                 }
                 break;
             case 2:
-                out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
-                if (out_ <= 1e-4) {
-                    segment_ = 3;
-                }
-                break;
-            case 3:
                 out_ = 0.0f;
                 break;
         }
@@ -94,9 +88,8 @@ private:
     }
 
     uint16_t lengthHit() {
-        uint16_t segment_1 = (1.0f/10.0) * sample_rate_;
-        uint16_t segment_2 = (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
-        uint16_t total = (segment_1+segment_2) * 1.1;
+        uint16_t segment_1 = (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
+        uint16_t total = (segment_1) * 1.1;
         return total;
     }
 };
