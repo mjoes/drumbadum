@@ -2,10 +2,10 @@
 #include <cmath>
 #include <stdio.h>
 
-class BassDrum {
+class HiHat {
 public:
-    BassDrum() {}
-    ~BassDrum() {}
+    HiHat() {}
+    ~HiHat() {}
 
     void Init(
         uint16_t sample_rate, 
@@ -94,8 +94,8 @@ private:
     }
 
     uint16_t lengthHit() {
-        uint16_t segment_1= (1.0f/10.0) * sample_rate_;
-        uint16_t segment_2= (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
+        uint16_t segment_1 = (1.0f/10.0) * sample_rate_;
+        uint16_t segment_2 = (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
         uint16_t total = (segment_1+segment_2) * 1.1;
         return total;
     }

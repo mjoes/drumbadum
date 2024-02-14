@@ -2,6 +2,7 @@
 #include <fstream>
 #include <plot.h>
 #include "drums/bass_drum.h"
+#include "drums/hi_hat.h"
 
 using namespace std;
 
@@ -15,32 +16,45 @@ int main(int argc, char** argv) {
     uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples] = {0};
-    bool trig;
-    uint16_t trig_BD[3] = {10000, 20000, 48000}; // Dummy triggers sample nr
+    bool t_BD;
+    bool t_HH;
+    uint16_t trig_BD[2] = {10000, 60000}; // Dummy triggers sample nr
+    uint16_t trig_HH[1] = {30000}; // Dummy triggers sample nr
 
-    // Initialize and define BassDrum processor
+    // Initialize and define BassDrum & HiHat processor
+    HiHat hi_hat;
     BassDrum bass_drum;
-    bass_drum.Init(sample_rate);
-    bass_drum.set_frequency(frequency);
-    bass_drum.set_decay(decay);
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
         for(int j = 0; j < static_cast<int>(sizeof(trig_BD) / sizeof(trig_BD[0])); j++){
             if (trig_BD[j] == i){
-                trig = 1;
+                t_BD = 1;
             }
         }
-
+        for(int j = 0; j < static_cast<int>(sizeof(trig_HH) / sizeof(trig_HH[0])); j++){
+            if (trig_HH[j] == i){
+                t_HH = 1;
+            }
+        }
         // Generate waveform sample
-        if (trig == 1) {
+        if (t_BD == 1) {
             bass_drum.Init(sample_rate);
+            bass_drum.set_frequency(frequency);
+            bass_drum.set_decay(decay);
             bass_drum.set_start(i);
         }
-        bass_drum.Process(&samples[i], i);
-
-        trig = 0;
+        if (t_HH == 1) {
+            hi_hat.Init(sample_rate);
+            hi_hat.set_frequency(frequency);
+            hi_hat.set_decay(decay);
+            hi_hat.set_start(i);
+        }
+        samples[i] = (bass_drum.Process(i) + hi_hat.Process(i))/2;
+        
+        t_HH = 0;
+        t_BD = 0;
     }
 
     // Write buffer to a raw file
