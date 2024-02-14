@@ -3,6 +3,8 @@
 #include <plot.h>
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
+#include "drums/snare.h"
+#include <random>
 
 using namespace std;
 
@@ -18,12 +20,15 @@ int main(int argc, char** argv) {
     int16_t samples[num_samples] = {0};
     bool t_BD;
     bool t_HH;
+    bool t_SD;
     uint16_t trig_BD[2] = {10000, 60000}; // Dummy triggers sample nr
     uint16_t trig_HH[2] = {30000, 60000}; // Dummy triggers sample nr
+    uint32_t trig_SD[2] = {20000, 70000}; // Dummy triggers sample nr
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat;
     BassDrum bass_drum;
+    SnareDrum snare_drum;
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
@@ -38,6 +43,11 @@ int main(int argc, char** argv) {
                 t_HH = 1;
             }
         }
+        for(int j = 0; j < static_cast<int>(sizeof(trig_SD) / sizeof(trig_SD[0])); j++){
+            if (trig_SD[j] == i){
+                t_SD = 1;
+            }
+        }
         // Generate waveform sample
         if (t_BD == 1) {
             bass_drum.Init(sample_rate);
@@ -50,10 +60,17 @@ int main(int argc, char** argv) {
             hi_hat.set_decay(decay*10);
             hi_hat.set_start(i);
         }
-        samples[i] = (bass_drum.Process(i) + hi_hat.Process(i))/2;
+        if (t_SD == 1) {
+            snare_drum.Init(sample_rate);
+            snare_drum.set_frequency(frequency*2);
+            snare_drum.set_decay(decay);
+            snare_drum.set_start(i);
+        }
+        samples[i] = (bass_drum.Process(i) + hi_hat.Process(i) + snare_drum.Process(i))/3;
         
         t_HH = 0;
         t_BD = 0;
+        t_SD = 0;
     }
 
     // Write buffer to a raw file

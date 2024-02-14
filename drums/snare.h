@@ -5,10 +5,10 @@
 
 using namespace std;
 
-class HiHat {
+class SnareDrum {
 public:
-    HiHat() : rd(), gen(rd()), dis(-32767, 32767) {}
-    ~HiHat() {}
+    SnareDrum() : rd(), gen(rd()), dis(-32767, 32767) {}
+    ~SnareDrum() {}
 
     void Init(
         uint16_t sample_rate, 
@@ -24,6 +24,11 @@ public:
         segment_ = segment;
     }
 
+    void set_frequency(uint16_t frequency) {
+        frequency_ = frequency;
+        phase_ = static_cast<float>(frequency_) * (2.0f * 3.14159f) / sample_rate_;
+    }
+
     void set_decay(uint16_t decay) {
         decay_ = decay;
     }
@@ -37,7 +42,7 @@ public:
     int16_t Process(size_t it) {
         // Generate waveform sample
         if (it > start_i_ && it < end_i_) {
-            int16_t sample = GenerateSample();
+            int16_t sample = GenerateSample(rel_pos_);
             float env = GenerateEnv(rel_pos_);
             int16_t out_val = static_cast<int16_t>(sample * env);
             rel_pos_ += 1;
@@ -64,10 +69,10 @@ private:
     random_device rd;
     mt19937 gen;
     uniform_int_distribution<int32_t> dis;
-
-    int32_t GenerateSample() {
+    
+    int32_t GenerateSample(size_t rel_pos_samp) {
         // Replace this with your own waveform generation logic
-        int32_t sample = dis(gen);
+        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp))+dis(gen); // 32767 is for PCM waves
         return sample;
     }
 
