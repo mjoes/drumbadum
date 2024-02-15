@@ -30,6 +30,14 @@ public:
         decay_ = decay;
     }
 
+    void set_envelope(uint16_t envelope) {
+        envelope_ = envelope;
+    }
+
+    void set_attack(uint16_t attack) {
+        attack_ = attack;
+    }
+
     void set_start(size_t start) {
         rel_pos_ = 0;
         start_i_ = start;
@@ -56,6 +64,8 @@ private:
     uint8_t cross_fade_;
     uint16_t decay_;
     uint16_t sample_rate_;
+    uint16_t envelope_;
+    uint16_t attack_;
     size_t rel_pos_;
     size_t start_i_;
     size_t end_i_;
@@ -73,7 +83,7 @@ private:
         float rel_pos_tmp = static_cast<float>(rel_pos_env)/sample_rate_;
         switch (segment_) {
             case 1: 
-                out_ = 10.0f * rel_pos_tmp;
+                out_ = attack_ * rel_pos_tmp;
                 if (out_ >= 1) {
                     segment_ = 2;
                     seg_tmp_ = rel_pos_tmp;
@@ -94,7 +104,7 @@ private:
     }
 
     uint16_t lengthHit() {
-        uint16_t segment_1= (1.0f/10.0) * sample_rate_;
+        uint16_t segment_1= (1.0f/static_cast<float>(attack_)) * sample_rate_;
         uint16_t segment_2= (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
         uint16_t total = (segment_1+segment_2) * 1.1;
         return total;
