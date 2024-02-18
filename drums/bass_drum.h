@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cmath>
 #include <stdio.h>
+#include <algorithm>
 
 class BassDrum {
 public:
@@ -23,7 +24,7 @@ public:
 
     void set_frequency(uint16_t frequency) {
         frequency_ = frequency;
-        phase_ = static_cast<float>(frequency_) * (2.0f * 3.14159f) / sample_rate_;
+        // phase_ = static_cast<float>(frequency_) * (2.0f * 3.14159f) / sample_rate_;
     }
 
     void set_decay(uint16_t decay) {
@@ -75,7 +76,21 @@ private:
     
     int32_t GenerateSample(size_t rel_pos_samp) {
         // Replace this with your own waveform generation logic
-        int32_t sample = static_cast<int32_t>(32767.0f * sin(phase_ * rel_pos_samp)); // 32767 is for PCM waves
+        // float freq_slope = -200.0f ;
+        float T = 1.0f;
+        float f0 = 10;
+        float f1 = 4000;
+        float t = static_cast<float>(rel_pos_samp) / sample_rate_;
+        float b = log(f1/f0) / T;
+        float a = 2.0 * 3.14159f * f0 / b;
+        float t_ = T * t;
+        // float k = pow((f1 / f0),(T/t));
+        // printf("%f\n",sin(2.0f * 3.14159f *frequency * t));
+        int32_t sample = 32767.0f * sin(a * exp(b * t_));
+        // int32_t sample = static_cast<int32_t>(32767.0f * sin((2.0f * 3.14159f * f0) *  
+                    // ((pow(k,(t/T))-1)/log(k)))); // 32767 is for PCM waves
+        // int32_t sample = static_cast<int32_t>(32767.0f * sin((2.0f * 3.14159f) *  
+        //     ((static_cast<float>(frequency_)  * t ) + (freq_slope * pow(t,2.0f) / 2.0f)))); // 32767 is for PCM waves
         return sample;
     }
 
