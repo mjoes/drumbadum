@@ -26,6 +26,10 @@ public:
         frequency_ = frequency;
     }
 
+    void set_overdrive(uint16_t overdrive) {
+        overdrive_ = overdrive / 500.0f + 1.0f;
+    }
+
     void set_decay(uint16_t decay) {
         decay_ = decay;
     }
@@ -54,9 +58,10 @@ public:
             int16_t sample = GenerateSample(rel_pos_);
             float env = GenerateEnv(rel_pos_);
             int16_t out_val = static_cast<int16_t>(sample * env);
-            rel_pos_ += 1;
+    
+            out_val = Overdrive(out_val, 1); // Apply distortion
 
-            // Clip sample if necessary
+            rel_pos_ += 1;
             return out_val;                
         }
         return 0;
@@ -73,6 +78,7 @@ private:
     uint16_t decay_;
     uint16_t sample_rate_;
     uint16_t envelope_;
+    float overdrive_;
     uint16_t attack_;
     size_t rel_pos_;
     size_t start_i_;
@@ -80,10 +86,28 @@ private:
     float out_;
     float seg_tmp_;
     uint8_t segment_;
-    
+
+    float Clamp(float value, float min, float max) {
+        return (value < min) ? min : (value > max) ? max : value;
+    }
+
+    int16_t Overdrive(int16_t value, uint8_t dist_type) {
+        int16_t clipped_value;
+        switch (dist_type){
+            case 0: // SOFT clipping 
+                // This algorithm is not ideal....
+                clipped_value = 32767 * (2.0f / M_PI) * atan(static_cast<float>(value/32767.0f) * overdrive_);
+                break;
+            case 1: // Hard clipping
+                clipped_value = Clamp(value * overdrive_, -32767.0f, 32767.0f);
+                break;
+        }
+        return clipped_value;
+    }
+            
     int32_t GenerateSample(size_t rel_pos_samp) {
         float t = static_cast<float>(rel_pos_samp) / sample_rate_;
-        int32_t sample;
+        float sample;
         if (t > interval_) {
             sample = 32767.0f * sin(2 * M_PI * frequency_ * t + phase_end_);
         } else {
