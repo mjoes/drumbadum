@@ -27,7 +27,7 @@ public:
     }
 
     void set_overdrive(uint16_t overdrive) {
-        overdrive_ = overdrive / 500.0f + 1.0f;
+        overdrive_ = overdrive / 200.0f + 1.0f;
     }
 
     void set_decay(uint16_t decay) {
@@ -89,14 +89,27 @@ private:
 
     float Overdrive(float value, uint8_t dist_type) {
         float clipped_value;
+        float overdriven_value = (value * overdrive_);
         switch (dist_type){
             case 0: // SOFT clipping 1
                 // This algorithm is not ideal....
-                clipped_value = (2.0f / M_PI) * atan(static_cast<float>(value) * overdrive_);
+                clipped_value = (2.0f / M_PI) * atan(overdriven_value);
                 break;
-            case 1: // Hard clipping
-                clipped_value = 0.5 * (fabs(value * overdrive_ + 1.0) - fabs(value * overdrive_ - 1.0));
+            case 1: // SOFT clipping 2
+                if (overdriven_value <= -1.0) {
+                    clipped_value = -1.0;
+                } 
+                else if (overdriven_value >= 1.0) {
+                    clipped_value = 1.0;
+                } 
+                else {
+                    clipped_value = (overdriven_value - pow(overdriven_value,3)/3.0) * (3.0/2.0);
+                }
                 break;
+            case 2: // HARD clipping
+                clipped_value = 0.5 * (fabs(overdriven_value + 1.0) - fabs(overdriven_value - 1.0));
+                break;
+                
         }
         return clipped_value;
     }

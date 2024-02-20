@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
             bass_drum.Init(sample_rate);
             bass_drum.set_frequency(frequency);
             bass_drum.set_envelope(100);
-            bass_drum.set_overdrive(500);
+            bass_drum.set_overdrive(0);
             bass_drum.set_decay(decay);
             bass_drum.set_attack(1000);
             bass_drum.set_start(i);
