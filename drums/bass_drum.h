@@ -87,10 +87,6 @@ private:
     float seg_tmp_;
     uint8_t segment_;
 
-    float Clamp(float value, float min, float max) {
-        return (value < min) ? min : (value > max) ? max : value;
-    }
-
     float Overdrive(float value, uint8_t dist_type) {
         float clipped_value;
         switch (dist_type){
@@ -99,7 +95,7 @@ private:
                 clipped_value = (2.0f / M_PI) * atan(static_cast<float>(value) * overdrive_);
                 break;
             case 1: // Hard clipping
-                clipped_value = Clamp(value * overdrive_, -1.0f, 1.0f);
+                clipped_value = 0.5 * (fabs(value * overdrive_ + 1.0) - fabs(value * overdrive_ - 1.0));
                 break;
         }
         return clipped_value;
