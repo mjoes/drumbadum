@@ -55,14 +55,14 @@ public:
     int16_t Process(size_t it) {
         // Generate waveform sample
         if (it > start_i_ && it < end_i_) {
-            int16_t sample = GenerateSample(rel_pos_);
+            float sample = GenerateSample(rel_pos_);
             float env = GenerateEnv(rel_pos_);
-            int16_t out_val = static_cast<int16_t>(sample * env);
+            float out_val = sample * env;
     
             out_val = Overdrive(out_val, 1); // Apply distortion
 
             rel_pos_ += 1;
-            return out_val;                
+            return out_val * 32767;                
         }
         return 0;
     }
@@ -91,28 +91,28 @@ private:
         return (value < min) ? min : (value > max) ? max : value;
     }
 
-    int16_t Overdrive(int16_t value, uint8_t dist_type) {
-        int16_t clipped_value;
+    float Overdrive(float value, uint8_t dist_type) {
+        float clipped_value;
         switch (dist_type){
-            case 0: // SOFT clipping 
+            case 0: // SOFT clipping 1
                 // This algorithm is not ideal....
-                clipped_value = 32767 * (2.0f / M_PI) * atan(static_cast<float>(value/32767.0f) * overdrive_);
+                clipped_value = (2.0f / M_PI) * atan(static_cast<float>(value) * overdrive_);
                 break;
             case 1: // Hard clipping
-                clipped_value = Clamp(value * overdrive_, -32767.0f, 32767.0f);
+                clipped_value = Clamp(value * overdrive_, -1.0f, 1.0f);
                 break;
         }
         return clipped_value;
     }
             
-    int32_t GenerateSample(size_t rel_pos_samp) {
+    float GenerateSample(size_t rel_pos_samp) {
         float t = static_cast<float>(rel_pos_samp) / sample_rate_;
         float sample;
         if (t > interval_) {
-            sample = 32767.0f * sin(2 * M_PI * frequency_ * t + phase_end_);
+            sample = sin(2 * M_PI * frequency_ * t + phase_end_);
         } else {
-            float func = slope_ * pow(t,2) / 2 + f0_ * t;
-            sample = 32767.0f * sin(2 * M_PI * func);  
+            float func = slope_ * pow(t,2) / 2.0 + f0_ * t;
+            sample = sin(2.0 * M_PI * func);  
         }
         return sample;
     }
