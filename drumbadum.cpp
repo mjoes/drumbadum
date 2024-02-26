@@ -52,10 +52,11 @@ int main(int argc, char** argv) {
         if (t_BD == 1) {
             bass_drum.Init(sample_rate);
             bass_drum.set_frequency(frequency);
-            bass_drum.set_envelope(100); // range 1-1000
-            bass_drum.set_overdrive(100); // range 1-1000
-            bass_drum.set_decay(200);     // range 1-1000
-            bass_drum.set_attack(1);    // range 1-1000
+            bass_drum.set_envelope(100);  // range 1-1000
+            bass_drum.set_overdrive(200); // range 1-1000
+            bass_drum.set_harmonics(100); // range 1-1000
+            bass_drum.set_decay(100);     // range 1-1000
+            bass_drum.set_attack(1);      // range 1-1000
             bass_drum.set_start(i);
         }
         // if (t_HH == 1) {

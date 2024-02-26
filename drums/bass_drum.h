@@ -2,10 +2,13 @@
 #include <cmath>
 #include <stdio.h>
 #include <algorithm>
+#include <random>
+
+using namespace std;
 
 class BassDrum {
 public:
-    BassDrum() {}
+    BassDrum() : flutter_(3) {}
     ~BassDrum() {}
 
     void Init(
@@ -47,10 +50,18 @@ public:
         attack_ = 1001 - attack;
     }
 
+    void set_harmonics(uint16_t harmonics) {
+        harmonics_ = static_cast<float>(harmonics) / 1000;
+    }
+
     void set_start(size_t start) {
         rel_pos_ = 0;
         start_i_ = start;
         end_i_ = start + lengthHit();
+
+        for (int i = 0; i < 3; ++i) {
+            flutter_[i] = d(gen);
+        }
     }
 
     int16_t Process(size_t it) {
@@ -76,6 +87,7 @@ private:
     float interval_;
     float slope_;
     float phase_end_;
+    float harmonics_;
     uint8_t decay_;
     uint16_t sample_rate_;
     uint16_t envelope_;
@@ -88,6 +100,11 @@ private:
     float out_;
     float seg_tmp_;
     uint8_t segment_;
+    vector<int16_t> flutter_; 
+
+    random_device rd{};
+    mt19937 gen{rd()};
+    normal_distribution<double> d{0, 1000};
 
     float Overdrive(float value, uint8_t dist_type) {
         float clipped_value;
@@ -125,6 +142,15 @@ private:
             float func = slope_ * pow(t,2) / 2.0 + f0_ * t;
             sample = sin(2.0 * M_PI * func);  
         }
+        sample += GenerateHarmonics(t);
+        return sample;
+    }
+
+    float GenerateHarmonics(float t) {
+        float sample = 0.0;
+        sample += 0.2 * harmonics_ * sin(2 * M_PI * (220.0 + flutter_[0]/125.0) * t + 0.5);
+        sample += 0.3 * harmonics_ * sin(2 * M_PI * (frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
+        sample += 0.2 * harmonics_ * sin(2 * M_PI * (frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
         return sample;
     }
 
