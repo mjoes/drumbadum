@@ -33,6 +33,10 @@ public:
         overdrive_ = overdrive / 200.0f + 1.0f;
     }
 
+    void set_velocity(uint16_t velocity) {
+        velocity_ = velocity / 1000.0;
+    }
+
     void set_decay(uint16_t decay) {
         decay_ = 52-(decay/20+1);
         length_decay_ = static_cast<float>(log(1e-4)) / -decay_ * sample_rate_;
@@ -99,6 +103,7 @@ private:
     uint32_t length_decay_;
     float out_;
     float seg_tmp_;
+    float velocity_;
     uint8_t segment_;
     vector<int16_t> flutter_; 
 
@@ -143,7 +148,7 @@ private:
             sample = sin(2.0 * M_PI * func);  
         }
         sample += GenerateHarmonics(t);
-        return sample;
+        return sample * velocity_;
     }
 
     float GenerateHarmonics(float t) {

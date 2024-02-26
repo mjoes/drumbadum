@@ -55,7 +55,8 @@ int main(int argc, char** argv) {
             bass_drum.set_envelope(100);  // range 1-1000
             bass_drum.set_overdrive(200); // range 1-1000
             bass_drum.set_harmonics(100); // range 1-1000
-            bass_drum.set_decay(100);     // range 1-1000
+            bass_drum.set_velocity(1000); // range 1-1000
+            bass_drum.set_decay(900);     // range 1-1000
             bass_drum.set_attack(1);      // range 1-1000
             bass_drum.set_start(i);
         }
