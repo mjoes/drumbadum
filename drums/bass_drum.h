@@ -8,22 +8,18 @@ using namespace std;
 
 class BassDrum {
 public:
-    BassDrum() : flutter_(3) {}
+    BassDrum(
+        uint16_t sample_rate) 
+        : 
+        sample_rate_(sample_rate),
+        flutter_(3)
+        {
+            rel_pos_ = 0; 
+            out_ = 0.0f;
+            seg_tmp_ = 0.0f; 
+            segment_ = 1; 
+        }
     ~BassDrum() {}
-
-    void Init(
-        uint16_t sample_rate, 
-        size_t rel_pos = 0, 
-        float out = 0.0f, 
-        float seg_tmp = 0.0f, 
-        uint8_t segment = 1) 
-    {
-        sample_rate_ = sample_rate;
-        rel_pos_ = rel_pos;
-        out_ = out;
-        seg_tmp_ = seg_tmp;
-        segment_ = segment;
-    }
 
     void set_frequency(uint16_t frequency) {
         frequency_ = frequency;

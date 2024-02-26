@@ -8,12 +8,10 @@
 
 using namespace std;
 
-enum {ARG_NAME,ARG_FREQUENCY,ARG_DECAY,ARG_DUR,ARG_NARGS};
+enum {ARG_NAME,ARG_DUR,ARG_NARGS};
 
 int main(int argc, char** argv) {
     // Define parameters for the waveform
-    uint16_t frequency = atoi(argv[ARG_FREQUENCY]); // Example frequency
-    uint16_t decay = atoi(argv[ARG_DECAY]);     // Example decay
     uint16_t duration = atoi(argv[ARG_DUR]);
     uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
@@ -27,7 +25,7 @@ int main(int argc, char** argv) {
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat;
-    BassDrum bass_drum;
+    BassDrum bass_drum(sample_rate);
     SnareDrum snare_drum;
 
     // Generate waveform samples and store them in a buffer
@@ -50,8 +48,8 @@ int main(int argc, char** argv) {
         }
         // Generate waveform sample
         if (t_BD == 1) {
-            bass_drum.Init(sample_rate);
-            bass_drum.set_frequency(frequency);
+            // bass_drum.Init();
+            bass_drum.set_frequency(40);
             bass_drum.set_envelope(100);  // range 1-1000
             bass_drum.set_overdrive(200); // range 1-1000
             bass_drum.set_harmonics(100); // range 1-1000
