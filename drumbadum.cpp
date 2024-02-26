@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     bool t_BD;
     bool t_HH;
     bool t_SD;
-    uint16_t trig_BD[2] = {10000, 60000}; // Dummy triggers sample nr
+    uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
     uint16_t trig_HH[2] = {30000, 60000}; // Dummy triggers sample nr
     uint32_t trig_SD[2] = {20000, 70000}; // Dummy triggers sample nr
 
@@ -52,10 +52,10 @@ int main(int argc, char** argv) {
         if (t_BD == 1) {
             bass_drum.Init(sample_rate);
             bass_drum.set_frequency(frequency);
-            bass_drum.set_envelope(100);
-            bass_drum.set_overdrive(0);
-            bass_drum.set_decay(decay);
-            bass_drum.set_attack(1000);
+            bass_drum.set_envelope(100); // range 1-1000
+            bass_drum.set_overdrive(100); // range 1-1000
+            bass_drum.set_decay(200);     // range 1-1000
+            bass_drum.set_attack(1);    // range 1-1000
             bass_drum.set_start(i);
         }
         // if (t_HH == 1) {

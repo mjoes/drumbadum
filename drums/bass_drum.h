@@ -31,7 +31,8 @@ public:
     }
 
     void set_decay(uint16_t decay) {
-        decay_ = decay;
+        decay_ = 52-(decay/20+1);
+        length_decay_ = static_cast<float>(log(1e-4)) / -decay_ * sample_rate_;
     }
 
     void set_envelope(uint16_t envelope) {
@@ -43,7 +44,7 @@ public:
     }
 
     void set_attack(uint16_t attack) {
-        attack_ = attack;
+        attack_ = 1001 - attack;
     }
 
     void set_start(size_t start) {
@@ -75,7 +76,7 @@ private:
     float interval_;
     float slope_;
     float phase_end_;
-    uint16_t decay_;
+    uint8_t decay_;
     uint16_t sample_rate_;
     uint16_t envelope_;
     float overdrive_;
@@ -83,6 +84,7 @@ private:
     size_t rel_pos_;
     size_t start_i_;
     size_t end_i_;
+    uint32_t length_decay_;
     float out_;
     float seg_tmp_;
     uint8_t segment_;
@@ -138,22 +140,14 @@ private:
                 break;
             case 2:
                 out_ = 1.0f * exp(-decay_ * (rel_pos_tmp-seg_tmp_));
-                if (out_ <= 1e-4) {
-                    segment_ = 3;
-                }
-                break;
-            case 3:
-                out_ = 0.0f;
                 break;
         }
     
         return out_;
     }
 
-    uint16_t lengthHit() {
-        uint16_t segment_1= (1.0f/static_cast<float>(attack_)) * sample_rate_;
-        uint16_t segment_2= (static_cast<double>(log(1e-4)) / -decay_) * sample_rate_;
-        uint16_t total = (segment_1+segment_2) * 1.1;
-        return total;
+    uint32_t lengthHit() {
+        uint32_t length = (1.0f/static_cast<float>(attack_)) * sample_rate_ + length_decay_;
+        return length;
     }
 };
