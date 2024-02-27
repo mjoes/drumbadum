@@ -54,9 +54,9 @@ int main(int argc, char** argv) {
             bass_drum.set_overdrive(200); // range 1-1000
             bass_drum.set_harmonics(100); // range 1-1000
             bass_drum.set_velocity(1000); // range 1-1000
-            bass_drum.set_decay(900);     // range 1-1000
+            bass_drum.set_decay(100);     // range 1-1000
             bass_drum.set_attack(1);      // range 1-1000
-            bass_drum.set_start(i);
+            bass_drum.set_start();
         }
         // if (t_HH == 1) {
         //     hi_hat.Init(sample_rate);
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
         //     snare_drum.set_decay(decay);
         //     snare_drum.set_start(i);
         // }
-        samples[i] = (bass_drum.Process(i) + hi_hat.Process(i) + snare_drum.Process(i))/3;
+        samples[i] = (bass_drum.Process() + hi_hat.Process(i) + snare_drum.Process(i))/3;
         
         t_HH = 0;
         t_BD = 0;

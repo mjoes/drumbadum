@@ -71,42 +71,50 @@ public:
         ENV.phase_end_ = -2 * M_PI * (ENV.f0_ + BD.frequency_ ) / 2 * ENV.interval_;
     }
 
-    void set_start(size_t start) {
+    void set_start() {
         rel_pos_ = 0;
-        start_i_ = start; // tackle this later when writing the sequencer
-        end_i_ = start + length_attack_ + length_decay_;
+        running_ = true;
+        end_i_ = length_attack_ + length_decay_;
+        segment_ = 1;
 
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen);
         }
     }
 
-    int16_t Process(size_t it) {
+    int16_t Process() {
         // Generate waveform sample
-        if (it > start_i_ && it < end_i_) {
-            float sample = GenerateSample(rel_pos_);
-            float env = GenerateEnv(rel_pos_);
-            float out_val = sample * env;
-            out_val = Overdrive(out_val, 1); // Apply distortion
+        if (running_ == false)
+            return 0;
 
-            rel_pos_ += 1;
-            return out_val * 32767;                
+        float sample = GenerateSample(rel_pos_);
+        float env = GenerateEnv(rel_pos_);
+        float out_val = sample * env;
+        out_val = Overdrive(out_val, 1); // Apply distortion
+
+        rel_pos_ += 1;
+        
+        
+        if (rel_pos_ >= end_i_) {
+            running_ = false;
         }
-        return 0;
+
+        return out_val * 32767;                
     }
 
 private:
     float seg_tmp_;
-    size_t rel_pos_;
-    size_t start_i_;
-    size_t end_i_;
-    uint32_t length_attack_;
+    bool running_;
+    uint32_t rel_pos_;
+    uint32_t end_i_;
     uint32_t length_decay_;
+    uint16_t length_attack_;
     uint16_t sample_rate_;
     uint8_t segment_;
     vector<int16_t> flutter_; 
     BassDrumSculpt BD;
     BassDrumEnv ENV;
+    
     random_device rd{};
     mt19937 gen{rd()};
     normal_distribution<double> d{0, 1000};
