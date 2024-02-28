@@ -33,8 +33,7 @@ public:
         flutter_(3)
         {
             rel_pos_ = 0; 
-            seg_tmp_ = 0.0f; 
-            segment_ = 1; 
+            length_attack_t_ = 0.0; 
         }
     ~BassDrum() {}
 
@@ -57,7 +56,8 @@ public:
 
     void set_attack(uint16_t attack) {
         BD.attack_ = 1001 - attack;
-        length_attack_ = (1.0f/static_cast<float>(BD.attack_)) * sample_rate_;
+        length_attack_t_ = (1.0f/static_cast<float>(BD.attack_));
+        length_attack_ = length_attack_t_ * sample_rate_;
     }
 
     void set_harmonics(uint16_t harmonics) {
@@ -75,7 +75,6 @@ public:
         rel_pos_ = 0;
         running_ = true;
         end_i_ = length_attack_ + length_decay_;
-        segment_ = 1;
 
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen);
@@ -92,6 +91,7 @@ public:
 
         sample = GenerateSample(t);
         sample += GenerateHarmonics(t);
+        sample *= BD.velocity_;
         sample *= GenerateEnv(t);
         int16_t output = Overdrive(sample, 1); // Apply distortion
 
@@ -99,19 +99,17 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output * BD.velocity_;
-        // return out_val * 32767;                
+        return output;           
     }
 
 private:
-    float seg_tmp_;
-    bool running_;
+    float length_attack_t_;
     uint32_t rel_pos_;
     uint32_t end_i_;
     uint32_t length_decay_;
     uint16_t length_attack_;
     uint16_t sample_rate_;
-    uint8_t segment_;
+    bool running_;
     vector<int16_t> flutter_; 
     BassDrumSculpt BD;
     BassDrumEnv ENV;
@@ -162,23 +160,14 @@ private:
         sample += 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
         return sample;
     }
-
+    
     float GenerateEnv(float t) {
         float out_;
-        switch (segment_) {
-            case 1: 
-                out_ = BD.attack_ * t;
-                if (out_ >= 1) {
-                    segment_ = 2;
-                    seg_tmp_ = t;
-                }
-                break;
-            case 2:
-                out_ = 1.0f * exp(-BD.decay_ * (t-seg_tmp_));
-                break;
+        if ( rel_pos_ >= length_attack_ ) {
+            out_ = 1.0f * exp(-BD.decay_ * (t-length_attack_t_));
+        } else {
+            out_ = BD.attack_ * t;
         }
-    
         return out_;
     }
-
 };
