@@ -8,12 +8,10 @@
 
 using namespace std;
 
-enum {ARG_NAME,ARG_FREQUENCY,ARG_DECAY,ARG_DUR,ARG_NARGS};
+enum {ARG_NAME,ARG_DUR,ARG_NARGS};
 
 int main(int argc, char** argv) {
     // Define parameters for the waveform
-    uint16_t frequency = atoi(argv[ARG_FREQUENCY]); // Example frequency
-    uint16_t decay = atoi(argv[ARG_DECAY]);     // Example decay
     uint16_t duration = atoi(argv[ARG_DUR]);
     uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
@@ -21,13 +19,13 @@ int main(int argc, char** argv) {
     bool t_BD;
     bool t_HH;
     bool t_SD;
-    uint16_t trig_BD[2] = {10000, 60000}; // Dummy triggers sample nr
+    uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
     uint16_t trig_HH[2] = {30000, 60000}; // Dummy triggers sample nr
     uint32_t trig_SD[2] = {20000, 70000}; // Dummy triggers sample nr
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat;
-    BassDrum bass_drum;
+    BassDrum bass_drum(sample_rate);
     SnareDrum snare_drum;
 
     // Generate waveform samples and store them in a buffer
@@ -50,23 +48,28 @@ int main(int argc, char** argv) {
         }
         // Generate waveform sample
         if (t_BD == 1) {
-            bass_drum.Init(sample_rate);
-            bass_drum.set_frequency(frequency);
-            bass_drum.set_decay(decay);
-            bass_drum.set_start(i);
+            // bass_drum.Init();
+            bass_drum.set_frequency(40);
+            bass_drum.set_envelope(100);  // range 1-1000
+            bass_drum.set_overdrive(10); // range 1-1000
+            bass_drum.set_harmonics(200); // range 1-1000
+            bass_drum.set_velocity(1000); // range 1-1000
+            bass_drum.set_decay(800);     // range 1-1000
+            bass_drum.set_attack(950);      // range 1-1000
+            bass_drum.set_start();
         }
-        if (t_HH == 1) {
-            hi_hat.Init(sample_rate);
-            hi_hat.set_decay(decay*10);
-            hi_hat.set_start(i);
-        }
-        if (t_SD == 1) {
-            snare_drum.Init(sample_rate);
-            snare_drum.set_frequency(frequency*2);
-            snare_drum.set_decay(decay);
-            snare_drum.set_start(i);
-        }
-        samples[i] = (bass_drum.Process(i) + hi_hat.Process(i) + snare_drum.Process(i))/3;
+        // if (t_HH == 1) {
+        //     hi_hat.Init(sample_rate);
+        //     hi_hat.set_decay(decay*10);
+        //     hi_hat.set_start(i);
+        // }
+        // if (t_SD == 1) {
+        //     snare_drum.Init(sample_rate);
+        //     snare_drum.set_frequency(frequency*2);
+        //     snare_drum.set_decay(decay);
+        //     snare_drum.set_start(i);
+        // }
+        samples[i] = (bass_drum.Process() + hi_hat.Process(i) + snare_drum.Process(i))/3;
         
         t_HH = 0;
         t_BD = 0;
