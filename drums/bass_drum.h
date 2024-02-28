@@ -87,19 +87,20 @@ public:
         if (running_ == false)
             return 0;
 
-        float sample = GenerateSample(rel_pos_);
-        float env = GenerateEnv(rel_pos_);
-        float out_val = sample * env;
-        out_val = Overdrive(out_val, 1); // Apply distortion
+        int32_t sample;
+        float t = static_cast<float>(rel_pos_) / sample_rate_;
+
+        sample = GenerateSample(t);
+        sample += GenerateHarmonics(t);
+        sample *= GenerateEnv(t);
+        int16_t output = Overdrive(sample, 1); // Apply distortion
 
         rel_pos_ += 1;
-        
-        
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-
-        return out_val * 32767;                
+        return output * BD.velocity_;
+        // return out_val * 32767;                
     }
 
 private:
@@ -114,72 +115,66 @@ private:
     vector<int16_t> flutter_; 
     BassDrumSculpt BD;
     BassDrumEnv ENV;
-    
+
     random_device rd{};
     mt19937 gen{rd()};
     normal_distribution<double> d{0, 1000};
 
-    float Overdrive(float value, uint8_t dist_type) {
-        float clipped_value;
-        float overdriven_value = (value * BD.overdrive_);
+    int16_t Overdrive(int32_t value, uint8_t dist_type) {
+        int16_t clipped_value;
+        int32_t overdriven_value = (value * BD.overdrive_);
+        float scaled_overdriven_value = overdriven_value / 32767.0;
         switch (dist_type){
-            case 0: // SOFT clipping 1
-                // This algorithm is not ideal....
-                clipped_value = (2.0f / M_PI) * atan(overdriven_value);
-                break;
             case 1: // SOFT clipping 2
-                if (overdriven_value <= -1.0) {
-                    clipped_value = -1.0;
+                if (overdriven_value <= -32767) {
+                    clipped_value = -32767;
                 } 
-                else if (overdriven_value >= 1.0) {
-                    clipped_value = 1.0;
+                else if (overdriven_value >= 32767) {
+                    clipped_value = 32767;
                 } 
                 else {
-                    clipped_value = (overdriven_value - pow(overdriven_value,3)/3.0) * (3.0/2.0);
+                    clipped_value = 32767 * (scaled_overdriven_value - pow(scaled_overdriven_value,3)/3.0) * (3.0/2.0);
                 }
                 break;
             case 2: // HARD clipping
-                clipped_value = 0.5 * (fabs(overdriven_value + 1.0) - fabs(overdriven_value - 1.0));
+                clipped_value = 0.5 * (fabs(overdriven_value + 32767) - fabs(overdriven_value - 32767));
                 break;
                 
         }
         return clipped_value;
     }
             
-    float GenerateSample(size_t rel_pos_samp) {
-        float t = static_cast<float>(rel_pos_samp) / sample_rate_;
-        float sample;
+    int16_t GenerateSample(float t) {
+        int16_t sample;
         if (t > ENV.interval_) {
-            sample = sin(2 * M_PI * BD.frequency_ * t + ENV.phase_end_);
+            sample = 32767 * sin(2 * M_PI * BD.frequency_ * t + ENV.phase_end_);
         } else {
             float func = ENV.slope_ * pow(t,2) / 2.0 + ENV.f0_ * t;
-            sample = sin(2.0 * M_PI * func);  
+            sample = 32767 * sin(2.0 * M_PI * func);  
         }
-        sample += GenerateHarmonics(t);
-        return sample * BD.velocity_;
-    }
-
-    float GenerateHarmonics(float t) {
-        float sample = 0.0;
-        sample += 0.2 * BD.harmonics_ * sin(2 * M_PI * (220.0 + flutter_[0]/125.0) * t + 0.5);
-        sample += 0.3 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
-        sample += 0.2 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
         return sample;
     }
 
-    float GenerateEnv(size_t rel_pos_env) {
-        float rel_pos_tmp = static_cast<float>(rel_pos_env)/sample_rate_;
+    int16_t GenerateHarmonics(float t) {
+        int16_t sample;
+        sample = 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (220.0 + flutter_[0]/125.0) * t + 0.5);
+        sample += 0.3 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
+        sample += 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
+        return sample;
+    }
+
+    float GenerateEnv(float t) {
         float out_;
         switch (segment_) {
             case 1: 
-                out_ = BD.attack_ * rel_pos_tmp;
+                out_ = BD.attack_ * t;
                 if (out_ >= 1) {
                     segment_ = 2;
-                    seg_tmp_ = rel_pos_tmp;
+                    seg_tmp_ = t;
                 }
                 break;
             case 2:
-                out_ = 1.0f * exp(-BD.decay_ * (rel_pos_tmp-seg_tmp_));
+                out_ = 1.0f * exp(-BD.decay_ * (t-seg_tmp_));
                 break;
         }
     
