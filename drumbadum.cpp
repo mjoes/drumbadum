@@ -58,7 +58,9 @@ int main(int argc, char** argv) {
         //     bass_drum.set_start();
         // }
         if (t_HH == 1) {
-            hi_hat.set_decay(200,1);
+            hi_hat.set_decay(200,0);
+            hi_hat.set_frequency(5000);
+            hi_hat.set_bandwidth(1000);
             hi_hat.set_start();
         }
         // if (t_SD == 1) {
