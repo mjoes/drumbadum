@@ -12,8 +12,8 @@ enum {ARG_NAME,ARG_DUR,ARG_NARGS};
 
 int main(int argc, char** argv) {
     // Define parameters for the waveform
-    uint16_t duration = atoi(argv[ARG_DUR]);
-    uint16_t sample_rate = 48000;
+    const uint16_t duration = atoi(argv[ARG_DUR]);
+    const uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples] = {0};
     bool t_BD;

@@ -84,7 +84,7 @@ private:
     uint16_t decay_;
     uint16_t bandwidth_;
     uint16_t frequency_;    
-    uint16_t sample_rate_;
+    const uint16_t sample_rate_;
     int32_t x_n_1 = 0;
     int32_t y_n_1 = 0;
     int32_t x_n_2 = 0;

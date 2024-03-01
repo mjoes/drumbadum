@@ -108,7 +108,7 @@ private:
     uint32_t end_i_;
     uint32_t length_decay_;
     uint16_t length_attack_;
-    uint16_t sample_rate_;
+    const uint16_t sample_rate_;
     bool running_;
     vector<int16_t> flutter_; 
     BassDrumSculpt BD;
