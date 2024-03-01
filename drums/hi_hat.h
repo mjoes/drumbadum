@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <random>
 #include <functional>
+#include "../envelopes.h"
 
 using namespace std;
 
@@ -20,17 +21,13 @@ public:
         }
     ~HiHat() {}
 
-    typedef float (HiHat::*MemberFunctionPtr)(float);
-
     void set_decay(uint16_t decay, bool decay_type = 0) {
         decay_type_ = decay_type;
+        length_decay_ = decay * sample_rate_ / 500;
         if (decay_type_ == 0) {
-            decay_ = 52-(decay/20+1);
-            length_decay_ = static_cast<float>(log(1e-4)) / -decay_ * sample_rate_;
-            envPtr = &HiHat::_exp_decay;
+            lookup_table_ = exp_env;
         } else {
-            length_decay_ = decay * sample_rate_ / 1000;
-            envPtr = &HiHat::_hard_decay;
+            lookup_table_ = log_env;
         }
     }
 
@@ -59,10 +56,8 @@ public:
             return 0;
 
         int32_t sample;
-        float t = static_cast<float>(rel_pos_) / sample_rate_;
-
         sample = bp_filter_2(GenerateSample());
-        sample *= (this->*envPtr)(t);
+        sample *= interpolate_env();
         int16_t output = sample;
 
         rel_pos_ += 1;
@@ -91,8 +86,8 @@ private:
     int32_t y_n_2 = 0;
     bool running_;
     bool decay_type_;
+    const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 
-    MemberFunctionPtr envPtr; 
 
     random_device rd;
     mt19937 gen;
@@ -107,7 +102,6 @@ private:
 
     int32_t bp_filter_2(int32_t x_n) {
         int32_t filtered = a0 * x_n - a0 * x_n_2 - b1 * y_n_1 - b2 * y_n_2;
-
         y_n_2 = y_n_1;
         y_n_1 = filtered;
         x_n_2 = x_n_1;
@@ -115,12 +109,13 @@ private:
         return filtered;
     }
 
-    float _exp_decay(float t) {
-        return 1.0f * exp(-decay_ * t);
-    }
-
-    float _hard_decay(float t) {
-        return 1.0;
+    float interpolate_env(){
+        float pos = static_cast<float>(rel_pos_) / length_decay_ * 256.0;
+        float frac = pos - int(pos);
+        uint16_t a = lookup_table_[int(pos)];
+        uint16_t b = lookup_table_[int(pos) + 1];
+        uint16_t output = a + frac * (b - a);
+        return output / 65535.0;
     }
 };
 
