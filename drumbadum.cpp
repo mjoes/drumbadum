@@ -79,10 +79,9 @@ int main(int argc, char** argv) {
         //     snare_drum.set_start(i);
         // }
         if (t_FM == 1) {
-            fm.set_decay(200,0);
-            fm.set_frequency(5000);
-            fm.set_bandwidth(1000);
-            fm.set_start();
+            fm.set_decay(400,0);
+            fm.set_frequency(74);
+            fm.set_start(); 
         }
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process() + snare_drum.Process(i))/3;
         
