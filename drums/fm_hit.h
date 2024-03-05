@@ -12,7 +12,10 @@ public:
     FmHit(
         uint16_t sample_rate)
         :
-        sample_rate_(sample_rate)
+        sample_rate_(sample_rate),
+        rd(), 
+        gen(rd()), 
+        dis(-1, 1)
         {
             rel_pos_ = 0;
         }
@@ -59,7 +62,7 @@ public:
 
         int32_t sample;
         float t = static_cast<float>(rel_pos_) / sample_rate_;
-        float rel_env = interpolate_env();
+        float rel_env = interpolate_env(length_decay_);
         sample = GenerateSample(t, rel_env);
         sample *= rel_env;
         int16_t output = sample;
@@ -84,23 +87,36 @@ private:
     bool decay_type_;
     const uint16_t* lookup_table_;
 
+    random_device rd;
+    mt19937 gen;
+    uniform_int_distribution<int32_t> dis;
+
     int32_t GenerateSample(float t, float rel_env) {
         // Replace this with your own waveform generation logic
         float amp_ratio_ = fm_amount_ * rel_env; // Uniform for nows
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (ratio_[0] * frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (ratio_[1] * frequency_) * t);
-        int32_t sample = 32767 * sin(2 * M_PI * frequency_ * t + mod_1 + mod_2);
+        // The next number could come from a lookup table, not sure if that's more efficient though
+        // memory vs speed....
+        float mod_3 = dis(gen) * interpolate_env(3480); 
+
+        int32_t sample = 32767 * sin(2 * M_PI * frequency_ * t + mod_1 + mod_2 + mod_3);
         
         return sample;
     }
 
-    float interpolate_env(){
-        float pos = static_cast<float>(rel_pos_) / (length_decay_) * 256.0;
+    float interpolate_env(uint32_t length_decay){
+        float pos = static_cast<float>(rel_pos_) / (length_decay) * 256.0;
         uint16_t int_pos = int(pos);
-        float frac = pos - int_pos;
-        uint16_t a = lookup_table_[int_pos];
-        uint16_t b = lookup_table_[int_pos + 1];
-        uint16_t output = a + frac * (b - a);
+        uint16_t output;
+        if (int_pos > 255) {
+            output = 0;
+        } else {
+            float frac = pos - int_pos;
+            uint16_t a = lookup_table_[int_pos];
+            uint16_t b = lookup_table_[int_pos + 1];
+            output = a + frac * (b - a);
+        }
 
         return output / 65535.0;
     }
