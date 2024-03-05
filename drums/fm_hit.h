@@ -32,8 +32,12 @@ public:
         frequency_ = frequency;
     }
 
-    void set_fm_amount(uint16_t fm_amount) {
-        fm_amount_ = fm_amount / 1000.0;
+    void set_fm_amount(uint16_t fm_amount, bool fm_type) {
+        if (fm_type == 0) {
+            fm_amount_ = fm_amount / 1000.0;
+        } else { // bonkers mode
+            fm_amount_ = fm_amount / 10.0;
+        }
     }
 
     void set_start() {
