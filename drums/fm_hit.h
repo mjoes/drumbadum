@@ -30,7 +30,10 @@ public:
 
     void set_frequency(uint16_t frequency) {
         frequency_ = frequency;
-        // phi_ = 2 * cos(2 * M_PI * frequency_ / sample_rate_);
+    }
+
+    void set_fm_amount(uint16_t fm_amount) {
+        fm_amount_ = fm_amount / 1000.0;
     }
 
     void set_start() {
@@ -59,6 +62,7 @@ public:
     }
 
 private:
+    float fm_amount_;
     uint32_t rel_pos_;
     uint32_t end_i_;
     uint32_t length_decay_;
@@ -71,7 +75,7 @@ private:
 
     int32_t GenerateSample(float t, float rel_env) {
         // Replace this with your own waveform generation logic
-        float amp_ratio_ = 0.5 * rel_env; // Uniform for now
+        float amp_ratio_ = fm_amount_ * rel_env; // Uniform for now
         int16_t ratio_[2] = { 3, 7 };
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (ratio_[0] * frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (ratio_[1] * frequency_) * t);
