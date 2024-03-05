@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
         //     snare_drum.set_start(i);
         // }
         if (t_FM == 1) {
-            fm.set_decay(400,0);
+            fm.set_decay(300,0);
             fm.set_frequency(74);
             fm.set_start(); 
         }
