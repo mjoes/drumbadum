@@ -27,8 +27,3 @@ with open('y_values.txt', 'w') as file:
 plt.plot(x, y)
 plt.grid(True)
 plt.savefig('y_x_plot.png')
-
-256
-20000
-
-4/20000*256
