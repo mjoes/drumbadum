@@ -32,6 +32,12 @@ public:
         frequency_ = frequency;
     }
 
+    void set_ratio(uint16_t ratio) {
+        uint8_t normalized_ratio = ratio / 20;
+        ratio_[0] = (3 * normalized_ratio / 7);
+        ratio_[1] = normalized_ratio;
+    }
+
     void set_fm_amount(uint16_t fm_amount, bool fm_type) {
         if (fm_type == 0) {
             fm_amount_ = fm_amount / 1000.0;
@@ -72,6 +78,7 @@ private:
     uint32_t length_decay_;
     uint16_t decay_;
     uint16_t frequency_;    
+    uint8_t ratio_[2];
     const uint16_t sample_rate_;
     bool running_;
     bool decay_type_;
@@ -79,8 +86,7 @@ private:
 
     int32_t GenerateSample(float t, float rel_env) {
         // Replace this with your own waveform generation logic
-        float amp_ratio_ = fm_amount_ * rel_env; // Uniform for now
-        int16_t ratio_[2] = { 3, 7 };
+        float amp_ratio_ = fm_amount_ * rel_env; // Uniform for nows
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (ratio_[0] * frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (ratio_[1] * frequency_) * t);
         int32_t sample = 32767 * sin(2 * M_PI * frequency_ * t + mod_1 + mod_2);

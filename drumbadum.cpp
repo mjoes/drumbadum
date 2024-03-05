@@ -80,7 +80,8 @@ int main(int argc, char** argv) {
         // }
         if (t_FM == 1) {
             fm.set_decay(300,0);
-            fm.set_fm_amount(1000,1);
+            fm.set_fm_amount(1000,0);
+            fm.set_ratio(1000);
             fm.set_frequency(74);
             fm.set_start(); 
         }
