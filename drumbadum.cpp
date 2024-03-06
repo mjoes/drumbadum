@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
         if (t_HH == 1) {
             hi_hat.set_decay(300,0);
             hi_hat.set_frequency(8000);
+            hi_hat.set_velocity(1000);
             hi_hat.set_bandwidth(1000);
             hi_hat.set_start();
         }
@@ -67,6 +68,7 @@ int main(int argc, char** argv) {
             fm.set_decay(300,0);
             fm.set_fm_amount(500,0);
             fm.set_ratio(200);
+            fm.set_velocity(1000);
             fm.set_frequency(74);
             fm.set_start(); 
         }

@@ -35,6 +35,10 @@ public:
         frequency_ = frequency;
     }
 
+    void set_velocity(uint16_t velocity) {
+        velocity_ = velocity / 1000.0;
+    }
+
     void set_ratio(uint16_t ratio) {
         uint8_t normalized_ratio = ratio / 20;
         ratio_[0] = (3 * normalized_ratio / 7);
@@ -64,6 +68,7 @@ public:
         float t = static_cast<float>(rel_pos_) / sample_rate_;
         float rel_env = interpolate_env(length_decay_);
         sample = GenerateSample(t, rel_env);
+        sample *= velocity_;
         sample *= rel_env;
         int16_t output = sample;
 
@@ -76,6 +81,7 @@ public:
 
 private:
     float fm_amount_;
+    float velocity_;
     uint32_t rel_pos_;
     uint32_t end_i_;
     uint32_t length_decay_;

@@ -36,6 +36,10 @@ public:
         phi_ = 2 * cos(2 * M_PI * frequency_ / sample_rate_);
     }
 
+    void set_velocity(uint16_t velocity) {
+        velocity_ = velocity / 1000.0;
+    }
+
     void set_bandwidth(uint16_t bandwidth) {
         bandwidth_ = bandwidth;
         lambda_ = 1 / tan(M_PI * bandwidth_ / sample_rate_);
@@ -57,6 +61,7 @@ public:
 
         int32_t sample;
         sample = bp_filter_2(GenerateSample());
+        sample *= velocity_;
         sample *= interpolate_env();
         int16_t output = sample;
 
@@ -73,6 +78,7 @@ private:
     float a0;
     float b1;
     float b2;
+    float velocity_;
     uint32_t rel_pos_;
     uint32_t end_i_;
     uint32_t length_decay_;
