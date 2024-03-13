@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <random>
+#include "../envelopes.h"
 
 using namespace std;
 
@@ -44,8 +45,8 @@ public:
     }
 
     void set_decay(uint16_t decay) {
-        BD.decay_ = 52-(decay/20+1);
-        length_decay_ = static_cast<float>(log(1e-4)) / -BD.decay_ * sample_rate_;
+        length_decay_ = decay * sample_rate_ / 400;
+        lookup_table_ = exp_env;
     }
 
     void set_attack(uint16_t attack) {
@@ -86,7 +87,7 @@ public:
         sample = GenerateSample(t);
         sample += GenerateHarmonics(t);
         sample *= BD.velocity_;
-        sample *= GenerateEnv(t);
+        sample *= interpolate_env();
         int16_t output = Overdrive(sample, 1); // Apply distortion
 
         rel_pos_ += 1;
@@ -101,6 +102,7 @@ private:
     uint32_t rel_pos_, end_i_, length_decay_;
     uint16_t length_attack_;
     const uint16_t sample_rate_;
+    const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 
     bool running_;
     BassDrumSculpt BD;
@@ -153,13 +155,12 @@ private:
         return sample;
     }
     
-    float GenerateEnv(float t) {
-        float out_;
-        if ( rel_pos_ >= length_attack_ ) {
-            out_ = 1.0f * exp(-BD.decay_ * (t-length_attack_t_));
-        } else {
-            out_ = BD.attack_ * t;
-        }
-        return out_;
+    float interpolate_env(){
+        float pos = static_cast<float>(rel_pos_) / length_decay_ * 256.0;
+        float frac = pos - int(pos);
+        uint16_t a = lookup_table_[int(pos)];
+        uint16_t b = lookup_table_[int(pos) + 1];
+        uint16_t output = a + frac * (b - a);
+        return output / 65535.0;
     }
 };
