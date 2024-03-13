@@ -7,19 +7,13 @@
 using namespace std;
 
 struct BassDrumSculpt {
-    float overdrive_;
-    float velocity_;
-    float harmonics_;
-    uint16_t frequency_;
-    uint16_t attack_;
+    float overdrive_, velocity_, harmonics_;
+    uint16_t frequency_, attack_;
     uint8_t decay_;
 };
 
 struct BassDrumEnv {
-    float interval_;
-    float phase_;
-    float slope_;
-    float phase_end_;
+    float interval_, phase_, slope_, phase_end_;
     uint16_t f0_;
 };
 
@@ -104,13 +98,11 @@ public:
 
 private:
     float length_attack_t_;
-    uint32_t rel_pos_;
-    uint32_t end_i_;
-    uint32_t length_decay_;
+    uint32_t rel_pos_, end_i_, length_decay_;
     uint16_t length_attack_;
     const uint16_t sample_rate_;
-    bool running_;
     vector<int16_t> flutter_; 
+    bool running_;
     BassDrumSculpt BD;
     BassDrumEnv ENV;
 

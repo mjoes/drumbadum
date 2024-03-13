@@ -7,6 +7,12 @@
 
 using namespace std;
 
+struct HiHatSculpt {
+    float velocity_;
+    uint16_t bandwidth_;
+    uint16_t frequency_;  
+};
+
 class HiHat {
 public:
     HiHat(
@@ -32,17 +38,17 @@ public:
     }
 
     void set_frequency(uint16_t frequency) {
-        frequency_ = frequency;
-        phi_ = 2 * cos(2 * M_PI * frequency_ / sample_rate_);
+        HH.frequency_ = frequency;
+        phi_ = 2 * cos(2 * M_PI * HH.frequency_ / sample_rate_);
     }
 
     void set_velocity(uint16_t velocity) {
-        velocity_ = velocity / 1000.0;
+        HH.velocity_ = velocity / 1000.0;
     }
 
     void set_bandwidth(uint16_t bandwidth) {
-        bandwidth_ = bandwidth;
-        lambda_ = 1 / tan(M_PI * bandwidth_ / sample_rate_);
+        HH.bandwidth_ = bandwidth;
+        lambda_ = 1 / tan(M_PI * HH.bandwidth_ / sample_rate_);
     }
 
     void set_start() {
@@ -61,7 +67,7 @@ public:
 
         int32_t sample;
         sample = bp_filter_2(GenerateSample());
-        sample *= velocity_;
+        sample *= HH.velocity_;
         sample *= interpolate_env();
         int16_t output = sample;
 
@@ -73,27 +79,15 @@ public:
     }
 
 private:
-    float lambda_;
-    float phi_;
-    float a0;
-    float b1;
-    float b2;
-    float velocity_;
-    uint32_t rel_pos_;
-    uint32_t end_i_;
-    uint32_t length_decay_;
-    uint16_t decay_;
-    uint16_t bandwidth_;
-    uint16_t frequency_;    
+    float lambda_, phi_, a0, b1, b2;
+    uint32_t rel_pos_, end_i_, decay_, length_decay_;
+    int32_t x_filter[2] = { 0, 0 };
+    int32_t y_filter[2] = { 0, 0 };
     const uint16_t sample_rate_;
-    int32_t x_n_1 = 0;
-    int32_t y_n_1 = 0;
-    int32_t x_n_2 = 0;
-    int32_t y_n_2 = 0;
-    bool running_;
-    bool decay_type_;
     const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 
+    bool running_, decay_type_;
+    HiHatSculpt HH;
 
     random_device rd;
     mt19937 gen;
@@ -107,11 +101,11 @@ private:
     }
 
     int32_t bp_filter_2(int32_t x_n) {
-        int32_t filtered = a0 * x_n - a0 * x_n_2 - b1 * y_n_1 - b2 * y_n_2;
-        y_n_2 = y_n_1;
-        y_n_1 = filtered;
-        x_n_2 = x_n_1;
-        x_n_1 = x_n;
+        int32_t filtered = a0 * x_n - a0 * x_filter[1] - b1 * y_filter[0] - b2 * y_filter[1];
+        y_filter[1] = y_filter[0];
+        y_filter[0] = filtered;
+        x_filter[1] = x_filter[0];
+        x_filter[0] = x_n;
         return filtered;
     }
 
