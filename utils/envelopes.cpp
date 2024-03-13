@@ -1,5 +1,21 @@
 #include "envelopes.h"
 
+float interpolate_env(uint32_t rel_pos, uint32_t length_decay, const uint16_t* lookup_table){
+    float pos = static_cast<float>(rel_pos) / (length_decay) * 256.0;
+    uint16_t int_pos = int(pos);
+    uint16_t output;
+    if (int_pos > 255) { //How to get rid of this if statement
+        output = 0;
+    } else {
+        float frac = pos - int_pos;
+        uint16_t a = lookup_table[int_pos];
+        uint16_t b = lookup_table[int_pos + 1];
+        output = a + frac * (b - a);
+    }
+
+    return output / 65535.0;
+}
+
 const uint16_t log_env[] = {
     65535, 65535, 65535, 65535,
     65535, 65535, 65535, 65535,

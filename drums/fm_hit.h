@@ -72,7 +72,7 @@ public:
 
         int32_t sample;
         float t = static_cast<float>(rel_pos_) / sample_rate_;
-        float rel_env = interpolate_env(length_decay_);
+        float rel_env = interpolate_env(rel_pos_, length_decay_, lookup_table_);
         sample = GenerateSample(t, rel_env);
         sample *= FM.velocity_;
         sample *= rel_env;
@@ -97,33 +97,16 @@ private:
     uniform_int_distribution<int32_t> dis;
 
     int32_t GenerateSample(float t, float rel_env) {
-        // Replace this with your own waveform generation logic
         float amp_ratio_ = FM.fm_amount_ * rel_env; // Uniform for nows
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[0] * FM.frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[1] * FM.frequency_) * t);
-        // The next number could come from a lookup table, not sure if that's more efficient though
-        // memory vs speed....
-        float mod_3 = dis(gen) * interpolate_env(3480); 
+        float mod_3 = dis(gen) * interpolate_env(rel_pos_, 3480, exp_env); // Whitenoise transient
 
         int32_t sample = 32767 * sin(2 * M_PI * FM.frequency_ * t + mod_1 + mod_2 + mod_3);
         
         return sample;
     }
 
-    float interpolate_env(uint32_t length_decay){
-        float pos = static_cast<float>(rel_pos_) / (length_decay) * 256.0;
-        uint16_t int_pos = int(pos);
-        uint16_t output;
-        if (int_pos > 255) {
-            output = 0;
-        } else {
-            float frac = pos - int_pos;
-            uint16_t a = lookup_table_[int_pos];
-            uint16_t b = lookup_table_[int_pos + 1];
-            output = a + frac * (b - a);
-        }
 
-        return output / 65535.0;
-    }
 };
 

@@ -54,7 +54,6 @@ public:
     void set_start() {
         rel_pos_ = 0;
         running_ = true;
-        end_i_ = length_decay_;
         a0 = 1 / (1 + lambda_);
         b1 = - lambda_ * phi_ * a0;
         b2 = a0 * (lambda_ - 1);
@@ -68,11 +67,11 @@ public:
         int32_t sample;
         sample = bp_filter_2(GenerateSample());
         sample *= HH.velocity_;
-        sample *= interpolate_env();
+        sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
         int16_t output = sample;
 
         rel_pos_ += 1;
-        if (rel_pos_ >= end_i_) {
+        if (rel_pos_ >= length_decay_) {
             running_ = false;
         }
         return output;           
@@ -80,7 +79,7 @@ public:
 
 private:
     float lambda_, phi_, a0, b1, b2;
-    uint32_t rel_pos_, end_i_, decay_, length_decay_;
+    uint32_t rel_pos_, decay_, length_decay_;
     int32_t x_filter[2] = { 0, 0 };
     int32_t y_filter[2] = { 0, 0 };
     const uint16_t sample_rate_;
@@ -107,15 +106,6 @@ private:
         x_filter[1] = x_filter[0];
         x_filter[0] = x_n;
         return filtered;
-    }
-
-    float interpolate_env(){
-        float pos = static_cast<float>(rel_pos_) / length_decay_ * 256.0;
-        float frac = pos - int(pos);
-        uint16_t a = lookup_table_[int(pos)];
-        uint16_t b = lookup_table_[int(pos) + 1];
-        uint16_t output = a + frac * (b - a);
-        return output / 65535.0;
     }
 };
 

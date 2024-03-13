@@ -46,7 +46,6 @@ public:
 
     void set_decay(uint16_t decay) {
         length_decay_ = decay * sample_rate_ / 400;
-        lookup_table_ = exp_env;
     }
 
     void set_attack(uint16_t attack) {
@@ -87,7 +86,7 @@ public:
         sample = GenerateSample(t);
         sample += GenerateHarmonics(t);
         sample *= BD.velocity_;
-        sample *= interpolate_env();
+        sample *= interpolate_env(rel_pos_, length_decay_, exp_env);
         int16_t output = Overdrive(sample, 1); // Apply distortion
 
         rel_pos_ += 1;
@@ -153,14 +152,5 @@ private:
         sample += 0.3 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
         sample += 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
         return sample;
-    }
-    
-    float interpolate_env(){
-        float pos = static_cast<float>(rel_pos_) / length_decay_ * 256.0;
-        float frac = pos - int(pos);
-        uint16_t a = lookup_table_[int(pos)];
-        uint16_t b = lookup_table_[int(pos) + 1];
-        uint16_t output = a + frac * (b - a);
-        return output / 65535.0;
     }
 };
