@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <random>
-#include "../envelopes.h"
+#include "../utils/envelopes.h"
 
 using namespace std;
 
