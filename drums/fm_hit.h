@@ -16,12 +16,12 @@ struct FmHitSculpt {
 class FmHit {
 public:
     FmHit(
-        uint16_t sample_rate)
+        uint16_t sample_rate,
+        mt19937& gen)
         :
         sample_rate_(sample_rate),
-        rd(), 
-        gen(rd()), 
-        dis(-1, 1)
+        gen_(gen),
+        dis(-1,1)
         {
             rel_pos_ = 0;
         }
@@ -90,17 +90,16 @@ private:
     const uint16_t sample_rate_;
     bool running_, decay_type_;
     const uint16_t* lookup_table_;
+    mt19937& gen_;
     FmHitSculpt FM;
 
-    random_device rd;
-    mt19937 gen;
     uniform_int_distribution<int32_t> dis;
 
     int32_t GenerateSample(float t, float rel_env) {
         float amp_ratio_ = FM.fm_amount_ * rel_env; // Uniform for nows
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[0] * FM.frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[1] * FM.frequency_) * t);
-        float mod_3 = dis(gen) * interpolate_env(rel_pos_, 3480, exp_env); // Whitenoise transient
+        float mod_3 = dis(gen_) * interpolate_env(rel_pos_, 3480, exp_env); // Whitenoise transient
 
         int32_t sample = 32767 * sin(2 * M_PI * FM.frequency_ * t + mod_1 + mod_2 + mod_3);
         

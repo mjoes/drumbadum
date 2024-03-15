@@ -22,10 +22,12 @@ struct BassDrumEnv {
 class BassDrum {
 public:
     BassDrum(
-        uint16_t sample_rate) 
+        uint16_t sample_rate,
+        mt19937& gen) 
         : 
         sample_rate_(sample_rate),
-        flutter_(3)
+        flutter_(3),
+        gen_(gen)
         {
             rel_pos_ = 0; 
             length_attack_t_ = 0.0; 
@@ -71,7 +73,7 @@ public:
         end_i_ = length_attack_ + length_decay_;
 
         for (int i = 0; i < 3; ++i) {
-            flutter_[i] = d(gen);
+            flutter_[i] = d(gen_);
         }
     }
 
@@ -104,12 +106,10 @@ private:
     const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 
     bool running_;
+    mt19937& gen_;
+    normal_distribution<double> d{0, 1000};
     BassDrumSculpt BD;
     BassDrumEnv ENV;
-
-    random_device rd{};
-    mt19937 gen{rd()};
-    normal_distribution<double> d{0, 1000};
 
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;

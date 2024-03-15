@@ -22,11 +22,13 @@ int main(int argc, char** argv) {
     uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
     uint16_t trig_HH[5] = {0, 15000, 30000, 45000, 60000}; // Dummy triggers sample nr
     uint16_t trig_FM[2] = {30000, 45000}; // Dummy triggers sample nr
+    random_device rd{};
+    mt19937 gen{rd()};
 
     // Initialize and define BassDrum & HiHat processor
-    HiHat hi_hat(sample_rate);
-    BassDrum bass_drum(sample_rate);
-    FmHit fm(sample_rate);
+    HiHat hi_hat(sample_rate, gen);
+    BassDrum bass_drum(sample_rate, gen);
+    FmHit fm(sample_rate, gen);
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {

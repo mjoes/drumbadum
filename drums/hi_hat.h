@@ -16,11 +16,11 @@ struct HiHatSculpt {
 class HiHat {
 public:
     HiHat(
-        uint16_t sample_rate)
+        uint16_t sample_rate,
+        mt19937& gen)
         :
         sample_rate_(sample_rate),
-        rd(), 
-        gen(rd()), 
+        gen_(gen),
         dis(-32767, 32767)
         {
             rel_pos_ = 0;
@@ -86,15 +86,13 @@ private:
     const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 
     bool running_, decay_type_;
-    HiHatSculpt HH;
-
-    random_device rd;
-    mt19937 gen;
+    mt19937& gen_;
     uniform_int_distribution<int32_t> dis;
+    HiHatSculpt HH;
 
     int32_t GenerateSample() {
         // Replace this with your own waveform generation logic
-        int32_t sample = dis(gen);
+        int32_t sample = dis(gen_);
         
         return sample;
     }
