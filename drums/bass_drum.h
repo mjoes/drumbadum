@@ -8,8 +8,7 @@
 using namespace std;
 
 struct BassDrumSculpt {
-    float overdrive_, velocity_, harmonics_;
-    uint16_t frequency_, attack_;
+    uint16_t frequency_, attack_, velocity_, overdrive_, harmonics_;
     uint8_t decay_;
 };
 
@@ -30,7 +29,6 @@ public:
         gen_(gen)
         {
             rel_pos_ = 0; 
-            length_attack_t_ = 0.0; 
         }
     ~BassDrum() {}
 
@@ -39,11 +37,11 @@ public:
     }
 
     void set_overdrive(uint16_t overdrive) {
-        BD.overdrive_ = overdrive / 200.0f + 1.0f;
+        BD.overdrive_ = (overdrive << 4) / 200 + (1 << 4); 
     }
 
     void set_velocity(uint16_t velocity) {
-        BD.velocity_ = velocity / 1000.0;
+        BD.velocity_ = (velocity << 8) / 1000;
     }
 
     void set_decay(uint16_t decay) {
@@ -52,12 +50,11 @@ public:
 
     void set_attack(uint16_t attack) {
         BD.attack_ = 1001 - attack;
-        length_attack_t_ = (1.0f/static_cast<float>(BD.attack_));
-        length_attack_ = length_attack_t_ * sample_rate_;
+        length_attack_ = sample_rate_ / BD.attack_;
     }
 
     void set_harmonics(uint16_t harmonics) {
-        BD.harmonics_ = static_cast<float>(harmonics) / 1000;
+        BD.harmonics_ = (harmonics << 8) / 1000;
     }
 
     void set_envelope(uint16_t envelope) {
@@ -87,10 +84,10 @@ public:
 
         sample = GenerateSample(t);
         sample += GenerateHarmonics(t);
-        sample *= BD.velocity_;
+        sample = (sample * BD.velocity_) >> 8 ;
         sample *= interpolate_env(rel_pos_, length_decay_, exp_env);
         int16_t output = Overdrive(sample, 1); // Apply distortion
-
+ 
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
             running_ = false;
@@ -99,7 +96,6 @@ public:
     }
 
 private:
-    float length_attack_t_;
     uint32_t rel_pos_, end_i_, length_decay_;
     uint16_t length_attack_;
     const uint16_t sample_rate_;
@@ -113,7 +109,7 @@ private:
 
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;
-        int32_t overdriven_value = (value * BD.overdrive_);
+        int32_t overdriven_value = (value * BD.overdrive_) >> 4;
         float scaled_overdriven_value = overdriven_value / 32767.0;
         switch (dist_type){
             case 1: // SOFT clipping 2
@@ -147,10 +143,11 @@ private:
     }
 
     int16_t GenerateHarmonics(float t) {
-        int16_t sample;
-        sample = 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (220.0 + flutter_[0]/125.0) * t + 0.5);
-        sample += 0.3 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
-        sample += 0.2 * 32767.0 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
+        int32_t sample;
+        sample = 6553 * BD.harmonics_ * sin(2 * M_PI * (220 + flutter_[0]/125.0) * t + 0.5);
+        sample += 9810 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
+        sample += 6553 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
+        sample >>= 8;
         return sample;
     }
 };
