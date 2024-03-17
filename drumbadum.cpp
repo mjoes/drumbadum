@@ -3,7 +3,6 @@
 #include <plot.h>
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
-#include "drums/snare.h"
 #include "drums/fm_hit.h"
 #include <random>
 
@@ -19,18 +18,17 @@ int main(int argc, char** argv) {
     int16_t samples[num_samples] = {0};
     bool t_BD;
     bool t_HH;
-    bool t_SD;
     bool t_FM;
     uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
-    uint16_t trig_HH[2] = {30000, 60000}; // Dummy triggers sample nr
-    uint16_t trig_FM[2] = {30000, 60000}; // Dummy triggers sample nr
-    uint32_t trig_SD[2] = {20000, 70000}; // Dummy triggers sample nr
+    uint16_t trig_HH[5] = {0, 15000, 30000, 45000, 60000}; // Dummy triggers sample nr
+    uint16_t trig_FM[2] = {30000, 45000}; // Dummy triggers sample nr
+    random_device rd{};
+    mt19937 gen{rd()};
 
     // Initialize and define BassDrum & HiHat processor
-    HiHat hi_hat(sample_rate);
-    BassDrum bass_drum(sample_rate);
-    FmHit fm(sample_rate);
-    SnareDrum snare_drum;
+    HiHat hi_hat(sample_rate, gen);
+    BassDrum bass_drum(sample_rate, gen);
+    FmHit fm(sample_rate, gen);
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
@@ -45,51 +43,41 @@ int main(int argc, char** argv) {
                 t_HH = 1;
             }
         }
-        for(int j = 0; j < static_cast<int>(sizeof(trig_SD) / sizeof(trig_SD[0])); j++){
-            if (trig_SD[j] == i){
-                t_SD = 1;
-            }
-        }
         for(int j = 0; j < static_cast<int>(sizeof(trig_FM) / sizeof(trig_FM[0])); j++){
             if (trig_FM[j] == i){
                 t_FM = 1;
-            }
+            }  
         }
         // Generate waveform sample
-        // if (t_BD == 1) {
-        //     bass_drum.set_frequency(40);
-        //     bass_drum.set_envelope(100);  // range 1-1000
-        //     bass_drum.set_overdrive(10); // range 1-1000
-        //     bass_drum.set_harmonics(200); // range 1-1000
-        //     bass_drum.set_velocity(1000); // range 1-1000
-        //     bass_drum.set_decay(800);     // range 1-1000
-        //     bass_drum.set_attack(950);      // range 1-1000
-        //     bass_drum.set_start();
-        // }
-        // if (t_HH == 1) {
-        //     hi_hat.set_decay(200,0);
-        //     hi_hat.set_frequency(5000);
-        //     hi_hat.set_bandwidth(1000);
-        //     hi_hat.set_start();
-        // }
-        // if (t_SD == 1) {
-        //     snare_drum.Init(sample_rate);
-        //     snare_drum.set_frequency(frequency*2);
-        //     snare_drum.set_decay(decay);
-        //     snare_drum.set_start(i);
-        // }
+        if (t_BD == 1) {
+            bass_drum.set_frequency(40);
+            bass_drum.set_envelope(50);  // range 1-1000
+            bass_drum.set_overdrive(100); // range 1-1000
+            bass_drum.set_harmonics(50); // range 1-1000
+            bass_drum.set_velocity(1000); // range 1-1000
+            bass_drum.set_decay(800);     // range 1-1000
+            bass_drum.set_attack(0);      // range 1-1000
+            bass_drum.set_start();
+        }
+        if (t_HH == 1) {
+            hi_hat.set_decay(300,0);
+            hi_hat.set_frequency(8000);
+            hi_hat.set_velocity(1000);
+            hi_hat.set_bandwidth(1000);
+            hi_hat.set_start();
+        }
         if (t_FM == 1) {
             fm.set_decay(300,0);
-            fm.set_fm_amount(1000,0);
-            fm.set_ratio(1000);
+            fm.set_fm_amount(500,0);
+            fm.set_ratio(200);
+            fm.set_velocity(1000);
             fm.set_frequency(74);
             fm.set_start(); 
         }
-        samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process() + snare_drum.Process(i))/3;
+        samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
         
         t_HH = 0;
         t_BD = 0;
-        t_SD = 0;
         t_FM = 0;
     }
 
