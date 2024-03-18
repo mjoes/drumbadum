@@ -10,18 +10,27 @@ using namespace std;
 
 enum {ARG_NAME,ARG_DUR,ARG_NARGS};
 
+bool bernoulli_draw(int8_t probability) {
+    uint8_t random_number = rand() % 100;
+    return random_number < probability;
+}
+
+uint16_t cv_uniform(uint16_t lower = 0, uint16_t upper = 1000) {
+    uint16_t range = upper - lower + 1;
+    return rand() % range + lower;
+}
+
 int main(int argc, char** argv) {
     // Define parameters for the waveform
-    const uint16_t duration = atoi(argv[ARG_DUR]);
+    const uint16_t duration = 10;
+    const uint8_t bpm = 130;
     const uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples] = {0};
     bool t_BD;
     bool t_HH;
     bool t_FM;
-    uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
-    uint16_t trig_HH[5] = {0, 15000, 30000, 45000, 60000}; // Dummy triggers sample nr
-    uint16_t trig_FM[2] = {30000, 45000}; // Dummy triggers sample nr
+    srand(time(NULL));
     random_device rd{};
     mt19937 gen{rd()};
 
@@ -30,47 +39,46 @@ int main(int argc, char** argv) {
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
 
+    // Initialize sequencer
+    uint8_t steps = 16; // 8, 16 or 32
+    uint16_t steps_sample = (60 * sample_rate * 4) / (bpm  * steps);
+    uint16_t bar_sample = (60 * sample_rate) / (bpm  * steps * 4);
+
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
-        for(int j = 0; j < static_cast<int>(sizeof(trig_BD) / sizeof(trig_BD[0])); j++){
-            if (trig_BD[j] == i){
+        if (i % steps_sample == 0){
+            t_BD = bernoulli_draw(40);
+            t_HH = bernoulli_draw(80);
+            t_FM = bernoulli_draw(50);
+            if (i % bar_sample == 0) {
                 t_BD = 1;
             }
         }
-        for(int j = 0; j < static_cast<int>(sizeof(trig_HH) / sizeof(trig_HH[0])); j++){
-            if (trig_HH[j] == i){
-                t_HH = 1;
-            }
-        }
-        for(int j = 0; j < static_cast<int>(sizeof(trig_FM) / sizeof(trig_FM[0])); j++){
-            if (trig_FM[j] == i){
-                t_FM = 1;
-            }  
-        }
+        
         // Generate waveform sample
         if (t_BD == 1) {
             bass_drum.set_frequency(40);
             bass_drum.set_envelope(50);  // range 1-1000
-            bass_drum.set_overdrive(100); // range 1-1000
-            bass_drum.set_harmonics(50); // range 1-1000
+            bass_drum.set_overdrive(cv_uniform()); // range 1-1000
+            bass_drum.set_harmonics(20); // range 1-1000
             bass_drum.set_velocity(1000); // range 1-1000
-            bass_drum.set_decay(800);     // range 1-1000
+            bass_drum.set_decay(cv_uniform());     // range 1-1000
             bass_drum.set_attack(0);      // range 1-1000
             bass_drum.set_start();
         }
         if (t_HH == 1) {
-            hi_hat.set_decay(300,0);
-            hi_hat.set_frequency(8000);
+            hi_hat.set_decay(cv_uniform(),bernoulli_draw(10));
+            hi_hat.set_frequency(cv_uniform(8000,12000));
             hi_hat.set_velocity(1000);
-            hi_hat.set_bandwidth(1000);
+            hi_hat.set_bandwidth(cv_uniform(300,3000));
             hi_hat.set_start();
         }
         if (t_FM == 1) {
-            fm.set_decay(300,0);
-            fm.set_fm_amount(500,0);
-            fm.set_ratio(200);
-            fm.set_velocity(1000);
+            fm.set_decay(cv_uniform(),0);
+            fm.set_fm_amount(cv_uniform(),0);
+            fm.set_ratio(cv_uniform(150,500));
+            fm.set_velocity(800);
             fm.set_frequency(74);
             fm.set_start(); 
         }
@@ -101,3 +109,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
