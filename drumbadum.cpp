@@ -9,9 +9,9 @@
 
 using namespace std;
 
-bool t_BD;
-bool t_HH;
-bool t_FM;
+bool t_BD = 0;
+bool t_HH = 0;
+bool t_FM = 0;
 random_device rd{};
 mt19937 gen{rd()};
 
@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     // Input params
     uint16_t rd_dial = 500;
     const uint16_t duration = 10;
-    const uint8_t bpm = 130;
+    const uint8_t bpm = 120;
 
     // Init variables
     const uint16_t sample_rate = 48000;
@@ -35,18 +35,19 @@ int main(int argc, char** argv) {
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
     uint16_t steps_sample = (60 * sample_rate * 4) / (bpm  * steps);
-    uint16_t bar_sample = (60 * sample_rate) / (bpm  * steps * 4);
+    uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
+    uint16_t beat_sample = (60 * sample_rate ) / (bpm);
 
     // Generate waveform samples and store them in a buffer
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
         if (i % steps_sample == 0){
-            t_BD = bernoulli_draw(40);
+            t_BD = bernoulli_draw(30);
             t_HH = bernoulli_draw(80);
             t_FM = bernoulli_draw(50);
-            if (i % bar_sample == 0) {
-                t_BD = 1;
-            }
+        }
+        if (i % bar_sample == 0) {
+            t_BD = 1;
         }
         
         // Generate waveform sample
