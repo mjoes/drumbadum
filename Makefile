@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -g
-SRCS = drumbadum.cpp ./utils/envelopes.cpp
+SRCS = drumbadum.cpp ./utils/envelopes.cpp ./utils/utils.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = drumbadum
 

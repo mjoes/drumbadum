@@ -4,35 +4,28 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
+#include "utils/utils.h"
 #include <random>
 
 using namespace std;
 
-enum {ARG_NAME,ARG_DUR,ARG_NARGS};
-
-bool bernoulli_draw(int8_t probability) {
-    uint8_t random_number = rand() % 100;
-    return random_number < probability;
-}
-
-uint16_t cv_uniform(uint16_t lower = 0, uint16_t upper = 1000) {
-    uint16_t range = upper - lower + 1;
-    return rand() % range + lower;
-}
+bool t_BD;
+bool t_HH;
+bool t_FM;
+random_device rd{};
+mt19937 gen{rd()};
 
 int main(int argc, char** argv) {
-    // Define parameters for the waveform
+    // Input params
+    uint16_t rd_dial = 500;
     const uint16_t duration = 10;
     const uint8_t bpm = 130;
+
+    // Init variables
     const uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples] = {0};
-    bool t_BD;
-    bool t_HH;
-    bool t_FM;
     srand(time(NULL));
-    random_device rd{};
-    mt19937 gen{rd()};
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat(sample_rate, gen);
