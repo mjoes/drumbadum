@@ -64,13 +64,15 @@ public:
         ENV.phase_end_ = -2 * M_PI * (ENV.f0_ + BD.frequency_ ) / 2 * ENV.interval_;
     }
 
-    void set_start() {
-        rel_pos_ = 0;
-        running_ = true;
-        end_i_ = length_attack_ + length_decay_;
+    void set_start(bool hit) {
+        if (hit == 1) {
+            rel_pos_ = 0;
+            running_ = true;
+            end_i_ = length_attack_ + length_decay_;
 
-        for (int i = 0; i < 3; ++i) {
-            flutter_[i] = d(gen_);
+            for (int i = 0; i < 3; ++i) {
+                flutter_[i] = d(gen_);
+            }
         }
     }
 
