@@ -18,10 +18,10 @@ mt19937 gen{rd()};
 
 int main(int argc, char** argv) {
     // Input params
-    uint8_t pot_seq_1 = pot_map(0);
+    uint8_t pot_seq_1 = pot_map(800,2);
     uint8_t pot_seq_2 = pot_map(500);
     uint8_t pot_seq_3 = pot_map(100);
-    printf("pots: %i, %i\n", pot_seq_2, pot_seq_3);
+    printf("pots: %i, %i\n", pot_seq_1, pot_seq_3);
     uint16_t rd_dial = 500;
 
     const uint16_t duration = 10;
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
         if (step_sample == steps_sample){
-            if (clave_pat[step] == true){
+            if (rhythms[pot_seq_1][step] == true){
                 t_hit = drum_hit(pot_seq_2,pot_seq_3,step);
             } else {
                 t_hit = chance_drum_hit(pot_seq_2,pot_seq_3,step);

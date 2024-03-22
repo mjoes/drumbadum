@@ -3,9 +3,11 @@
 #include <iostream>
 #include <cstdlib>
 
+
 int8_t drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step) {
     uint8_t hit_1 = patterns[knob_1][step] * 3 / 100;
     uint8_t hit_2 = patterns[2 - knob_2][step] * 3 / 100;
+    printf("%i, %i, %i, %i\n",patterns[knob_1][step], patterns[2 - knob_2][step],patterns[knob_1][step] * 3 / 100,patterns[2 - knob_2][step] * 3 / 100);
     int8_t output = hit_1 - hit_2;
     return abs(output);
 }
@@ -20,11 +22,20 @@ int8_t chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step) {
     return output;
 }
 
-const bool clave_pat[] = {
-    1, 0, 0, 1, 
-    0, 0, 1, 0, 
-    0, 0, 1, 0, 
-    1, 0, 0, 0 
+
+const bool rhythms[2][16] = {
+    { // clave
+        1, 0, 0, 1, 
+        0, 0, 1, 0, 
+        0, 0, 1, 0, 
+        1, 0, 0, 0 
+    },
+    { // 4x4
+        1, 0, 0, 0, 
+        1, 0, 0, 0, 
+        1, 0, 0, 0, 
+        1, 0, 0, 0 
+    }
 };
 
 const uint8_t patterns[3][16] {
