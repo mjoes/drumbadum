@@ -20,7 +20,8 @@ int main(int argc, char** argv) {
     // Input params
     uint8_t pot_seq_1 = pot_map(0);
     uint8_t pot_seq_2 = pot_map(500);
-    uint8_t pot_seq_3 = pot_map(800);
+    uint8_t pot_seq_3 = pot_map(100);
+    printf("pots: %i, %i\n", pot_seq_2, pot_seq_3);
     uint16_t rd_dial = 500;
 
     const uint16_t duration = 10;
@@ -52,6 +53,8 @@ int main(int argc, char** argv) {
         if (step_sample == steps_sample){
             if (clave_pat[step] == true){
                 t_hit = drum_hit(pot_seq_2,pot_seq_3,step);
+            } else {
+                t_hit = chance_drum_hit(pot_seq_2,pot_seq_3,step);
             }
             step_sample = 0;
             ++step;

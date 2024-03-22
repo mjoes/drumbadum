@@ -8,6 +8,7 @@ uint16_t cv_uniform(uint16_t lower, uint16_t upper) {
 
 uint8_t pot_map(uint16_t input, uint8_t range) {
     uint8_t mapped_val = input * 3 / 1000;
+    printf("%i\n",mapped_val);
     return mapped_val;
 }
 
