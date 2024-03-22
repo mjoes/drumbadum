@@ -4,20 +4,22 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
+#include "pattern/rhythmic_pattern.h"
 #include "utils/utils.h"
 #include <random>
 
 using namespace std;
 
-bool t_BD = 0;
-bool t_HH = 0;
-bool t_FM = 0;
-random_device rd{};
-mt19937 gen{rd()};
-
 int main(int argc, char** argv) {
+    random_device rd{};
+    mt19937 gen{rd()};
+
     // Input params
-    uint16_t rd_dial = 500;
+    uint8_t pot_seq_1 = pot_map(100,5);
+    uint8_t pot_seq_2 = pot_map(500);
+    uint8_t pot_seq_3 = pot_map(900);
+    uint8_t pot_seq_rd = pot_map(500,100);
+
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -34,24 +36,33 @@ int main(int argc, char** argv) {
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
-    uint16_t steps_sample = (60 * sample_rate * 4) / (bpm  * steps);
     uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
-    uint16_t beat_sample = (60 * sample_rate ) / (bpm);
+    uint16_t steps_sample = bar_sample / steps;
+    uint16_t beat_sample = bar_sample / 4;
 
     // Generate waveform samples and store them in a buffer
+    uint8_t step = 0;
+    uint16_t step_sample = 0;
+    uint8_t t_hit = 4;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
-        if (i % steps_sample == 0){
-            t_BD = bernoulli_draw(30);
-            t_HH = bernoulli_draw(80);
-            t_FM = bernoulli_draw(50);
+        if (step_sample == steps_sample){
+            if (rhythms[pot_seq_1][step] == true){
+                // WHAT ABOUT MULTIPLE HITS SIMULTANEOUSLY
+                t_hit = drum_hit(pot_seq_2,pot_seq_3,step);
+            } else {
+                t_hit = chance_drum_hit(pot_seq_2,pot_seq_3,step);
+            }
+            step_sample = 0;
+            ++step;
+            if (step > 15) {
+                step = 0;
+            }
         }
-        if (i % bar_sample == 0) {
-            t_BD = 1;
-        }
-        
+        ++step_sample;
+
         // Generate waveform sample
-        if (t_BD == 1) {
+        if (t_hit == 1) {
             bass_drum.set_frequency(40);
             bass_drum.set_envelope(50);  // range 1-1000
             bass_drum.set_overdrive(cv_uniform()); // range 1-1000
@@ -61,14 +72,14 @@ int main(int argc, char** argv) {
             bass_drum.set_attack(0);      // range 1-1000
             bass_drum.set_start();
         }
-        if (t_HH == 1) {
+        if (t_hit == 2) {
             hi_hat.set_decay(cv_uniform(),bernoulli_draw(10));
             hi_hat.set_frequency(cv_uniform(8000,12000));
             hi_hat.set_velocity(1000);
             hi_hat.set_bandwidth(cv_uniform(300,3000));
             hi_hat.set_start();
         }
-        if (t_FM == 1) {
+        if (t_hit == 0) {
             fm.set_decay(cv_uniform(),0);
             fm.set_fm_amount(cv_uniform(),0);
             fm.set_ratio(cv_uniform(150,500));
@@ -78,9 +89,7 @@ int main(int argc, char** argv) {
         }
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
         
-        t_HH = 0;
-        t_BD = 0;
-        t_FM = 0;
+        t_hit = 4;
     }
 
     // Write buffer to a raw file
