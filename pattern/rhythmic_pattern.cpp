@@ -3,23 +3,38 @@
 #include <iostream>
 #include <cstdlib>
 
+using namespace std;
 
-int8_t drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step) {
-    uint8_t hit_1 = patterns[knob_1][step] * 3 / 100;
-    uint8_t hit_2 = patterns[2 - knob_2][step] * 3 / 100;
-    printf("%i, %i, %i, %i\n",patterns[knob_1][step], patterns[2 - knob_2][step],patterns[knob_1][step] * 3 / 100,patterns[2 - knob_2][step] * 3 / 100);
-    int8_t output = hit_1 - hit_2;
-    return abs(output);
+void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
+    // for (int i = 0; i < 3; ++i) {
+    //     cout << hits[i] << " ";
+    // }
+    // cout << "\n";
+    uint8_t hit_1 = patterns[knob_1][step];
+    uint8_t hit_2 = patterns[2 - knob_2][step];
+    // printf("%i, %i, %i, %i\n",patterns[knob_1][step], patterns[2 - knob_2][step],patterns[knob_1][step] * 3 / 100,patterns[2 - knob_2][step] * 3 / 100);
+    int16_t output = hit_1 * 3 / 100 - hit_2 * 3 / 100;
+    hits[abs(output)] = 1;
+    if (bernoulli_draw(patterns[knob_1][step])) { 
+        hits[hit_2 * 3 / 100] = 1;
+    }
+    cout << "Drum hits: ";
+    for (int i = 0; i < 3; ++i) {
+        cout << hits[i] << " ";
+    }
+    cout << "\n";
 }
 
-int8_t chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step) {
-    uint8_t output;
+void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
     if (bernoulli_draw(patterns[knob_1][step])) { 
-        output = patterns[knob_2][step] * 3 / 100;
-    } else {
-        output = 4;
-    }
-    return output;
+        uint8_t output = patterns[knob_2][step] * 3 / 100;
+        hits[output] = 1;
+        cout << "Chance hits: ";
+        for (int i = 0; i < 3; ++i) {
+            cout << hits[i] << " ";
+        }
+        cout << "\n";
+    } 
 }
 
 
