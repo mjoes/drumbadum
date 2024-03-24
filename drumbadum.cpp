@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_1 = pot_map(100,5);
     uint8_t pot_seq_2 = pot_map(900);
     uint8_t pot_seq_3 = pot_map(500);
-    uint8_t pot_seq_rd = pot_map(500,100);
+    uint8_t pot_seq_rd = pot_map(100,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -44,7 +44,6 @@ int main(int argc, char** argv) {
     // Generate waveform samples and store them in a buffer
     uint8_t step = 0;
     uint16_t step_sample = 0;
-    // uint8_t* t_hit;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
         if (step_sample == steps_sample){

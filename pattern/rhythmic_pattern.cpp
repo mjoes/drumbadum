@@ -6,6 +6,11 @@
 using namespace std;
 
 void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
+    // Probability of hits based on difference between pattern 1 and 2 is not equally distributed:
+    // 4/9 for kick
+    // 3/9 for fm hit
+    // 2/9 for hihat 
+
     // for (int i = 0; i < 3; ++i) {
     //     cout << hits[i] << " ";
     // }
@@ -28,11 +33,11 @@ void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
 void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t step, int16_t* hits) {
     uint8_t prob = patterns[knob_1][step];
     if (rand() % 100 < prob) { 
-        uint8_t output = patterns[knob_2][step] * 3 / 100;
+        uint8_t hit = patterns[knob_2][step] / 5;
+        uint8_t output = prob_hat[hit]; // Bias to hat in spite of FM hit
         if (rand() % 100 < knob_rd) { 
             output += rand() % 3;
-            if (output > 2)
-                output -= 3;
+            output %= 3;
         }
         hits[output] = 1;
         
@@ -44,6 +49,12 @@ void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t st
     } 
 }
 
+const uint8_t prob_hat[20] {
+    0, 0, 0, 0, 0, 
+    1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2
+};
 
 const bool rhythms[5][16] = {
     { // son clave
