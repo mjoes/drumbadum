@@ -17,11 +17,10 @@ int main(int argc, char** argv) {
     int16_t hits[3] = { 0, 0, 0};
 
     // Input params
-    uint8_t pot_seq_1 = pot_map(300,5);
+    uint8_t pot_seq_1 = pot_map(100,5);
     uint8_t pot_seq_2 = pot_map(900);
-    uint8_t pot_seq_3 = pot_map(900);
+    uint8_t pot_seq_3 = pot_map(500);
     uint8_t pot_seq_rd = pot_map(500,100);
-
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -53,7 +52,7 @@ int main(int argc, char** argv) {
                 drum_hit(pot_seq_2,pot_seq_3,step, hits);
             } 
             else {
-                chance_drum_hit(pot_seq_2,pot_seq_3,step, hits);
+                chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
             }
             step_sample = 0;
             ++step;

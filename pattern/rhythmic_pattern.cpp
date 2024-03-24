@@ -25,10 +25,17 @@ void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
     cout << "\n";
 }
 
-void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
-    if (bernoulli_draw(patterns[knob_1][step])) { 
+void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t step, int16_t* hits) {
+    uint8_t prob = patterns[knob_1][step];
+    if (rand() % 100 < prob) { 
         uint8_t output = patterns[knob_2][step] * 3 / 100;
+        if (rand() % 100 < knob_rd) { 
+            output += rand() % 3;
+            if (output > 2)
+                output -= 3;
+        }
         hits[output] = 1;
+        
         cout << "Chance hits: ";
         for (int i = 0; i < 3; ++i) {
             cout << hits[i] << " ";
