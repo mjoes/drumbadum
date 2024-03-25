@@ -8,15 +8,11 @@
 using namespace std;
 
 struct BassDrumSculpt {
-    uint16_t frequency_, attack_, velocity_, overdrive_, harmonics_;
+    float interval_, phase_, slope_, phase_end_;
+    uint16_t frequency_, attack_, velocity_, overdrive_, harmonics_, f0_;
+    uint32_t length_decay_;
     uint8_t decay_;
 };
-
-struct BassDrumEnv {
-    float interval_, phase_, slope_, phase_end_;
-    uint16_t f0_;
-};
-
 
 class BassDrum {
 public:
@@ -40,12 +36,16 @@ public:
         BD.overdrive_ = (overdrive << 4) / 200 + (1 << 4); 
     }
 
-    void set_velocity(uint16_t velocity) {
-        BD.velocity_ = (velocity << 8) / 1000;
+    void set_velocity(uint16_t velocity, bool accent) {
+        if (accent == true) {
+            BD.velocity_ = 256;
+        } else {
+            BD.velocity_ = (velocity << 8) / 1000;
+        }
     }
 
     void set_decay(uint16_t decay) {
-        length_decay_ = decay * sample_rate_ / 400;
+        BD.length_decay_ = decay * sample_rate_ / 400;
     }
 
     void set_attack(uint16_t attack) {
@@ -58,16 +58,16 @@ public:
     }
 
     void set_envelope(uint16_t envelope) {
-        ENV.f0_ = BD.frequency_ * envelope / 20; // 20 is for a kick drum range, might want to play around with this
-        ENV.interval_ = 0.05; // TODO: This needs tuning
-        ENV.slope_ = (BD.frequency_ - ENV.f0_) / ENV.interval_;
-        ENV.phase_end_ = -2 * M_PI * (ENV.f0_ + BD.frequency_ ) / 2 * ENV.interval_;
+        BD.f0_ = BD.frequency_ * envelope / 20; // 20 is for a kick drum range, might want to play around with this
+        BD.interval_ = 0.05; // TODO: This needs tuning
+        BD.slope_ = (BD.frequency_ - BD.f0_) / BD.interval_;
+        BD.phase_end_ = -2 * M_PI * (BD.f0_ + BD.frequency_ ) / 2 * BD.interval_;
     }
 
     void set_start() {
         rel_pos_ = 0;
         running_ = true;
-        end_i_ = length_attack_ + length_decay_;
+        end_i_ = length_attack_ + BD.length_decay_;
 
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen_);
@@ -85,7 +85,7 @@ public:
         sample = GenerateSample(t);
         sample += GenerateHarmonics(t);
         sample = (sample * BD.velocity_) >> 8 ;
-        sample *= interpolate_env(rel_pos_, length_decay_, exp_env);
+        sample *= interpolate_env(rel_pos_, BD.length_decay_, exp_env);
         int16_t output = Overdrive(sample, 1); // Apply distortion
  
         rel_pos_ += 1;
@@ -96,7 +96,7 @@ public:
     }
 
 private:
-    uint32_t rel_pos_, end_i_, length_decay_;
+    uint32_t rel_pos_, end_i_;
     uint16_t length_attack_;
     const uint16_t sample_rate_;
     const uint16_t* lookup_table_;
@@ -105,7 +105,6 @@ private:
     mt19937& gen_;
     normal_distribution<double> d{0, 1000};
     BassDrumSculpt BD;
-    BassDrumEnv ENV;
 
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;
@@ -133,10 +132,10 @@ private:
             
     int16_t GenerateSample(float t) {
         int16_t sample;
-        if (t > ENV.interval_) {
-            sample = 32767 * sin(2 * M_PI * BD.frequency_ * t + ENV.phase_end_);
+        if (t > BD.interval_) {
+            sample = 32767 * sin(2 * M_PI * BD.frequency_ * t + BD.phase_end_);
         } else {
-            float func = ENV.slope_ * pow(t,2) / 2.0 + ENV.f0_ * t;
+            float func = BD.slope_ * pow(t,2) / 2.0 + BD.f0_ * t;
             sample = 32767 * sin(2.0 * M_PI * func);  
         }
         return sample;
