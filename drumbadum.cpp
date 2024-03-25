@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
     random_device rd{};
     mt19937 gen{rd()};
     int16_t hits[3] = { 0, 0, 0};
+    int16_t seq_buffer[3][16] = {0};
 
     // Input params
     uint8_t pot_seq_1 = pot_map(100,5);
@@ -22,6 +23,7 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_3 = pot_map(500);
     uint8_t pot_seq_rd = pot_map(500,100);
     uint8_t pot_seq_art = pot_map(1000,100);
+    uint8_t pot_seq_turing = pot_map(500,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -46,24 +48,32 @@ int main(int argc, char** argv) {
     // Generate waveform samples and store them in a buffer
     uint8_t step = 0;
     uint16_t step_sample = 0;
-    // uint8_t glitch = 0;
+    uint8_t glitch = 0;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
-
         // disabling glitch
         // if (step_sample % glitch_sample == 0 && glitch / 10 > 0) {
         //     hits[glitch % 10]=1;
         //     glitch -= 10;
         // }
         if (step_sample == steps_sample){
-            if (rhythms[pot_seq_1][step] == true){
-                drum_hit(pot_seq_2,pot_seq_3,step, hits);
-            } 
-            else {
-                chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
-            }
-            glitch = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
+            if (pot_seq_turing < 20 || pot_seq_turing > 80 ) {
+                for (int i = 0; i < 3; ++i) {
+                    hits[i] = seq_buffer[i][step]; // Access each element using array subscript notation
+                }
+            } else {
+                if (rhythms[pot_seq_1][step] == true){
+                    drum_hit(pot_seq_2,pot_seq_3,step, hits);
+                } 
+                else {
+                    chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
+                }
+                glitch = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
 
+                for (int i = 0; i < 3; ++i) {
+                    seq_buffer[i][step] = hits[i];
+                }
+            }
             step_sample = 0;
             ++step;
             if (step > 15) {
