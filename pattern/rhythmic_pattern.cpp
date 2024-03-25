@@ -49,6 +49,17 @@ void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t st
     } 
 }
 
+void artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, int16_t* hits) {
+    if (rand() % 100 < knob_art) {
+        uint8_t output = patterns[knob_1][16-step] * 3 / 100;
+        if (rand() % 100 < knob_rd) { 
+            output += rand() % 3;
+            output %= 3;
+        }
+        hits[output] = 1;
+    } 
+}
+
 const uint8_t prob_hat[20] {
     0, 0, 0, 0, 0, 
     1, 1, 1, 1, 1,
