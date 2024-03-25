@@ -19,8 +19,8 @@ int main(int argc, char** argv) {
 
     // Input params
     uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(900);
-    uint8_t pot_seq_3 = pot_map(500);
+    uint8_t pot_seq_2 = pot_map(900,50);
+    uint8_t pot_seq_3 = pot_map(500,50);
     uint8_t pot_seq_rd = pot_map(500,100);
     uint8_t pot_seq_art = pot_map(1000,100);
     uint8_t pot_seq_turing = pot_map(500,100);

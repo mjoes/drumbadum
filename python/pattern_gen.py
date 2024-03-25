@@ -3,7 +3,7 @@ import math
 import random 
 
 val = []
-for i in range(0,16):
+for i in range(0,752):
     val.append(random.randint(0,100))
 
 num_columns = 4  # Number of columns in the output text file
