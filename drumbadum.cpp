@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_2 = pot_map(900);
     uint8_t pot_seq_3 = pot_map(500);
     uint8_t pot_seq_rd = pot_map(500,100);
-    uint8_t pot_seq_art = pot_map(500,100);
+    uint8_t pot_seq_art = pot_map(1000,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -40,13 +40,21 @@ int main(int argc, char** argv) {
     uint8_t steps = 16; // 8, 16 or 32
     uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
     uint16_t steps_sample = bar_sample / steps;
+    uint16_t glitch_sample = steps_sample / 4 + 1;
     uint16_t beat_sample = bar_sample / 4;
 
     // Generate waveform samples and store them in a buffer
     uint8_t step = 0;
     uint16_t step_sample = 0;
+    // uint8_t glitch = 0;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
+
+        // disabling glitch
+        // if (step_sample % glitch_sample == 0 && glitch / 10 > 0) {
+        //     hits[glitch % 10]=1;
+        //     glitch -= 10;
+        // }
         if (step_sample == steps_sample){
             if (rhythms[pot_seq_1][step] == true){
                 drum_hit(pot_seq_2,pot_seq_3,step, hits);
@@ -54,7 +62,7 @@ int main(int argc, char** argv) {
             else {
                 chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
             }
-            artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
+            glitch = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
 
             step_sample = 0;
             ++step;
@@ -94,9 +102,6 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 3; ++i) {
             hits[i] = 0; // Access each element using array subscript notation
         }
-
-        
-        // t_hit = 4;
     }
 
     // Write buffer to a raw file

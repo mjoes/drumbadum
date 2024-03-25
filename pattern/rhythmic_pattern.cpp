@@ -10,24 +10,13 @@ void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
     // 4/9 for kick
     // 3/9 for fm hit
     // 2/9 for hihat 
-
-    // for (int i = 0; i < 3; ++i) {
-    //     cout << hits[i] << " ";
-    // }
-    // cout << "\n";
     uint8_t hit_1 = patterns[knob_1][step];
     uint8_t hit_2 = patterns[2 - knob_2][step];
-    // printf("%i, %i, %i, %i\n",patterns[knob_1][step], patterns[2 - knob_2][step],patterns[knob_1][step] * 3 / 100,patterns[2 - knob_2][step] * 3 / 100);
     int16_t output = hit_1 * 3 / 100 - hit_2 * 3 / 100;
     hits[abs(output)] = 1;
     if (bernoulli_draw(patterns[knob_1][step])) { 
         hits[hit_2 * 3 / 100] = 1;
     }
-    cout << "Drum hits: ";
-    for (int i = 0; i < 3; ++i) {
-        cout << hits[i] << " ";
-    }
-    cout << "\n";
 }
 
 void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t step, int16_t* hits) {
@@ -40,24 +29,28 @@ void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t st
             output %= 3;
         }
         hits[output] = 1;
-        
-        cout << "Chance hits: ";
-        for (int i = 0; i < 3; ++i) {
-            cout << hits[i] << " ";
-        }
-        cout << "\n";
     } 
 }
 
-void artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, int16_t* hits) {
-    if (rand() % 100 < knob_art) {
+uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, int16_t* hits) {
+    uint8_t sample = rand() % 100;
+    uint8_t glitch = 0;
+    if (sample < knob_art) {
         uint8_t output = patterns[knob_1][16-step] * 3 / 100;
-        if (rand() % 100 < knob_rd) { 
+        uint8_t sample_rd = rand() % 100;
+        if (sample_rd < knob_rd) { 
             output += rand() % 3;
             output %= 3;
         }
         hits[output] = 1;
+        
+        // Disable glitch
+        // int16_t prob_glitch = (knob_art - 94 ) * 5;
+        // if (sample_rd < prob_glitch) { // using sample_rd to avoid an extra rand() invocation
+        //     glitch = (rand() % 4) * 10 + output;
+        // }
     }
+    return glitch;
 }
 
 const uint8_t prob_hat[20] {
