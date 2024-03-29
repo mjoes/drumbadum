@@ -4,81 +4,118 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
+#include "pattern/rhythmic_pattern.h"
+#include "utils/utils.h"
 #include <random>
+#include <cstring>
 
 using namespace std;
 
-enum {ARG_NAME,ARG_DUR,ARG_NARGS};
-
 int main(int argc, char** argv) {
-    // Define parameters for the waveform
-    const uint16_t duration = atoi(argv[ARG_DUR]);
+    random_device rd{};
+    mt19937 gen{rd()};
+    int16_t hits[3] = { 0, 0, 0};
+    int16_t seq_buffer[3][16] = {0};
+
+    // Input params
+    uint8_t pot_seq_1 = pot_map(100,5);
+    uint8_t pot_seq_2 = pot_map(900,50);
+    uint8_t pot_seq_3 = pot_map(300,50);
+    uint8_t pot_seq_rd = pot_map(100,100);
+    uint8_t pot_seq_art = pot_map(300,100);
+    uint8_t pot_seq_turing = pot_map(500,100);
+    const uint16_t duration = 10;
+    const uint8_t bpm = 120;
+
+    // Init variables
     const uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t samples[num_samples] = {0};
-    bool t_BD;
-    bool t_HH;
-    bool t_FM;
-    uint16_t trig_BD[2] = {0, 60000}; // Dummy triggers sample nr
-    uint16_t trig_HH[5] = {0, 15000, 30000, 45000, 60000}; // Dummy triggers sample nr
-    uint16_t trig_FM[2] = {30000, 45000}; // Dummy triggers sample nr
-    random_device rd{};
-    mt19937 gen{rd()};
+    srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
 
+    // Initialize sequencer
+    uint8_t steps = 16; // 8, 16 or 32
+    uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
+    uint16_t steps_sample = bar_sample / steps;
+    // uint16_t glitch_sample = steps_sample / 4 + 1;
+    // uint16_t beat_sample = bar_sample / 4;
+
     // Generate waveform samples and store them in a buffer
+    uint8_t step = 0;
+    uint16_t step_sample = 0;
+    uint8_t glitch = 0;
+    bool accent = false;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
-        for(int j = 0; j < static_cast<int>(sizeof(trig_BD) / sizeof(trig_BD[0])); j++){
-            if (trig_BD[j] == i){
-                t_BD = 1;
+        // disabling glitch
+        // if (step_sample % glitch_sample == 0 && glitch / 10 > 0) {
+        //     hits[glitch % 10]=1;
+        //     glitch -= 10;
+        // }
+        if (step_sample == steps_sample){
+            if (pot_seq_turing < 20 || pot_seq_turing > 80 ) {
+                for (int i = 0; i < 3; ++i) {
+                    hits[i] = seq_buffer[i][step]; // Access each element using array subscript notation
+                }
+            } else {
+                if (rhythms[pot_seq_1][step] == true){
+                    drum_hit(pot_seq_2,pot_seq_3,step, hits);
+                    accent = true;
+                } 
+                else {
+                    chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
+                    accent = false;
+                }
+                glitch = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
+
+                for (int i = 0; i < 3; ++i) {
+                    seq_buffer[i][step] = hits[i];
+                }
+            }
+            step_sample = 0;
+            ++step;
+            if (step > 15) {
+                step = 0;
             }
         }
-        for(int j = 0; j < static_cast<int>(sizeof(trig_HH) / sizeof(trig_HH[0])); j++){
-            if (trig_HH[j] == i){
-                t_HH = 1;
-            }
-        }
-        for(int j = 0; j < static_cast<int>(sizeof(trig_FM) / sizeof(trig_FM[0])); j++){
-            if (trig_FM[j] == i){
-                t_FM = 1;
-            }  
-        }
+        ++step_sample;
+
         // Generate waveform sample
-        if (t_BD == 1) {
+        if (hits[1] == 1) {
             bass_drum.set_frequency(40);
             bass_drum.set_envelope(50);  // range 1-1000
-            bass_drum.set_overdrive(100); // range 1-1000
-            bass_drum.set_harmonics(50); // range 1-1000
-            bass_drum.set_velocity(1000); // range 1-1000
-            bass_drum.set_decay(800);     // range 1-1000
+            bass_drum.set_overdrive(cv_uniform()); // range 1-1000
+            bass_drum.set_harmonics(20); // range 1-1000
+            bass_drum.set_velocity(500, accent); // range 1-1000
+            bass_drum.set_decay(cv_uniform()); // range 1-1000
             bass_drum.set_attack(0);      // range 1-1000
             bass_drum.set_start();
         }
-        if (t_HH == 1) {
-            hi_hat.set_decay(300,0);
-            hi_hat.set_frequency(8000);
-            hi_hat.set_velocity(1000);
-            hi_hat.set_bandwidth(1000);
+        if (hits[2] == 1) {
+            hi_hat.set_decay(cv_uniform(),bernoulli_draw(10));
+            hi_hat.set_frequency(cv_uniform(8000,12000));
+            hi_hat.set_velocity(500, accent);
+            hi_hat.set_bandwidth(cv_uniform(300,3000));
             hi_hat.set_start();
         }
-        if (t_FM == 1) {
-            fm.set_decay(300,0);
-            fm.set_fm_amount(500,0);
-            fm.set_ratio(200);
-            fm.set_velocity(1000);
+        if (hits[0] == 1) {
+            fm.set_decay(cv_uniform(),0);
+            fm.set_fm_amount(cv_uniform(),0);
+            fm.set_ratio(cv_uniform(150,500));
+            fm.set_velocity(300, accent );
             fm.set_frequency(74);
             fm.set_start(); 
         }
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
-        
-        t_HH = 0;
-        t_BD = 0;
-        t_FM = 0;
+
+        for (int i = 0; i < 3; ++i) {
+            hits[i] = 0; // Access each element using array subscript notation
+        }
     }
 
     // Write buffer to a raw file
@@ -101,3 +138,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

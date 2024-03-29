@@ -41,8 +41,13 @@ public:
         FM.frequency_ = frequency;
     }
 
-    void set_velocity(uint16_t velocity) {
-        FM.velocity_ = velocity / 1000.0;
+    void set_velocity(uint16_t velocity, bool accent) {
+        if (accent == true) {
+            FM.velocity_ = 1.0;
+        } else {
+            FM.velocity_ = velocity / 1000.0;
+        }
+        
     }
 
     void set_ratio(uint16_t ratio) {

@@ -42,8 +42,12 @@ public:
         phi_ = 2 * cos(2 * M_PI * HH.frequency_ / sample_rate_);
     }
 
-    void set_velocity(uint16_t velocity) {
-        HH.velocity_ = velocity / 1000.0;
+    void set_velocity(uint16_t velocity, bool accent) {
+        if (accent == true) {
+            HH.velocity_ = 1.0;
+        } else {
+            HH.velocity_ = velocity / 1000.0;
+        }
     }
 
     void set_bandwidth(uint16_t bandwidth) {
