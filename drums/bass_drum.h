@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <random>
 #include "../utils/envelopes.h"
+#include "../utils/utils.h"
+#include "../pattern/rhythmic_pattern.h"
 
 using namespace std;
 
@@ -25,8 +27,17 @@ public:
         gen_(gen)
         {
             rel_pos_ = 0; 
+            set_attack(0);
         }
     ~BassDrum() {}
+
+    void set_pattern(uint8_t pattern_nr) {
+        BD.frequency_ = (patterns[pattern_nr][1] * 60 / 100) + 25;
+        BD.overdrive_ = (patterns[pattern_nr][2] << 4) / 30 + (1 << 4); 
+        set_envelope(50); 
+        BD.harmonics_ = ((patterns[pattern_nr][3] * 10) << 8) / 1000;
+        BD.length_decay_ = (patterns[pattern_nr][4] * 10) * sample_rate_ / 400;
+    }
 
     void set_frequency(uint16_t frequency) {
         BD.frequency_ = frequency;
@@ -132,12 +143,13 @@ private:
             
     int16_t GenerateSample(float t) {
         int16_t sample;
-        if (t > BD.interval_) {
-            sample = 32767 * sin(2 * M_PI * BD.frequency_ * t + BD.phase_end_);
-        } else {
-            float func = BD.slope_ * pow(t,2) / 2.0 + BD.f0_ * t;
-            sample = 32767 * sin(2.0 * M_PI * func);  
-        }
+        // if (t >= BD.interval_) {
+        //     sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * t + BD.phase_end_);
+        // } else {
+        //     float func = BD.slope_ * t * t / 2.0 + BD.f0_ * t;
+        //     sample = 32767 * sin(2.0 * M_PI * func);  
+        // }
+        sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * t);  
         return sample;
     }
 
