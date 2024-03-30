@@ -93,7 +93,7 @@ public:
         }
     }
 
-    void set_start() {
+    void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
         rel_pos_ = 0;
         running_ = true;
         end_i_ = length_attack_ + BD.length_decay_;
@@ -101,6 +101,8 @@ public:
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen_);
         }
+        set_velocity(500, accent);
+        set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
     int16_t Process() {
