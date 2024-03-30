@@ -4,3 +4,4 @@ drumbadum
 *.png
 *.o
 pattern.txt
+.vscode/

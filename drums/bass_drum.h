@@ -34,9 +34,9 @@ public:
     void set_pattern(uint8_t pattern_nr) {
         BD.frequency_ = (patterns[pattern_nr][1] * 60 / 100) + 25;
         BD.overdrive_ = (patterns[pattern_nr][2] << 4) / 30 + (1 << 4); 
-        set_envelope(50); 
         BD.harmonics_ = ((patterns[pattern_nr][3] * 10) << 8) / 1000;
         BD.length_decay_ = (patterns[pattern_nr][4] * 10) * sample_rate_ / 400;
+        set_envelope(patterns[pattern_nr][5]); // Envelope needed fixing, but cannot use current solution
     }
 
     void set_frequency(uint16_t frequency) {
@@ -69,10 +69,25 @@ public:
     }
 
     void set_envelope(uint16_t envelope) {
-        BD.f0_ = BD.frequency_ * envelope / 20; // 20 is for a kick drum range, might want to play around with this
+        BD.f0_ = BD.frequency_ * envelope / 2; // 2 is for a kick drum range, might want to play around with this
         BD.interval_ = 0.05; // TODO: This needs tuning
         BD.slope_ = (BD.frequency_ - BD.f0_) / BD.interval_;
-        BD.phase_end_ = -2 * M_PI * (BD.f0_ + BD.frequency_ ) / 2 * BD.interval_;
+        float y_1 = sin(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
+        float dy_1 = 2 * M_PI * (BD.slope_ * BD.interval_ + BD.f0_) * cos(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
+        float phi_1 = asin(y_1);
+        float phi_2 = M_PI - phi_1;
+        float dz_1 = 2 * M_PI * BD.frequency_ * cos(phi_1);
+        while (phi_1 < 0) { 
+            phi_1 += 2*M_PI;
+        }
+        while (phi_2 > (2*M_PI)){
+            phi_2 = 2*M_PI;
+        }
+        if (dy_1/abs(dy_1) == dz_1/abs(dz_1)) {
+            BD.phase_end_ = phi_1;
+        } else {
+            BD.phase_end_ = phi_2;
+        }
     }
 
     void set_start() {
@@ -143,13 +158,12 @@ private:
             
     int16_t GenerateSample(float t) {
         int16_t sample;
-        // if (t >= BD.interval_) {
-        //     sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * t + BD.phase_end_);
-        // } else {
-        //     float func = BD.slope_ * t * t / 2.0 + BD.f0_ * t;
-        //     sample = 32767 * sin(2.0 * M_PI * func);  
-        // }
-        sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * t);  
+        if (t >= BD.interval_) {
+            sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * (t - BD.interval_) + BD.phase_end_);
+        } else {
+            float func = BD.slope_ * t * t / 2.0 + BD.f0_ * t;
+            sample = 32767 * sin(2.0 * M_PI * func);  
+        }
         return sample;
     }
 

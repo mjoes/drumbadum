@@ -3,24 +3,40 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 time = np.linspace(0, 0.1, 10000)
-f1 = 39
-f0 = 85
-interval = 0.05
+f0 = 78
+f1 = 50
+interval = 0.06
 
-# c = (f1 - f0) / interval
-# x1_t = math.sin(2 * math.pi * ((c * interval * interval / 2) + f0 * interval))
+y_1 = math.sin(2 * math.pi * f0 * interval)
+# y_2 = math.sin(math.pi - 2 * math.pi * f0 * interval)
+dy_1 = 2 * math.pi * f0 * math.cos(2 * math.pi * f0 * interval)
+# dy_2 = 2 * math.pi * f0 * math.cos(math.pi - 2 * math.pi * f0 * interval)
+sign_1 = math.copysign(1,dy_1)
 
-# t_intersect = math.asin(x1_t) / (2 * math.pi * f1) 
-# phase_offset = 2 * math.pi * f1 * t_intersect
+phi_1 = math.asin(y_1)# - (2 * math.pi * f1 * interval)
+phi_2 = math.pi - phi_1
+dz_1 = 2 * math.pi * f1 * math.cos(phi_1)
+dz_2 = 2 * math.pi * f1 * math.cos(phi_2)
+while phi_1 < 0:
+    phi_1 = phi_1 + 2*math.pi
+
+while phi_2 > 2 * math.pi:
+    phi_2 = phi_2 - 2 * math.pi
+if math.copysign(1, dz_1) == sign_1:
+    phi = phi_1
+else:
+    phi = phi_2
+print(y_1, dy_1, sign_1)
+print(phi_1, phi_2)
+print(dz_1, dz_2)
 
 out = []
 for t in time:
-    k = pow((f1 / f0), (t / interval))
-    if k != 1:
-        x = math.sin(2 * math.pi * f0 * (pow(k, (t / interval)) - 1) / math.log(k))
+    if t < interval:
+        y = math.sin(2 * math.pi * f0 * t)
     else:
-        x = math.sin(2 * math.pi * f0 * t / interval)  # Handle special case when k = 1
-    out.append(x)
+        y = math.sin(2 * math.pi * f1 * (t - interval) + phi )
+    out.append(y)
 
 plt.plot(time, out)
 plt.grid(True)
