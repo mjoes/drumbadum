@@ -31,12 +31,15 @@ public:
         }
     ~BassDrum() {}
 
-    void set_pattern(uint8_t pattern_nr) {
-        BD.frequency_ = (patterns[pattern_nr][1] * 60 / 100) + 25;
-        BD.overdrive_ = (patterns[pattern_nr][2] << 4) / 30 + (1 << 4); 
-        BD.harmonics_ = ((patterns[pattern_nr][3] * 10) << 8) / 1000;
-        BD.length_decay_ = (patterns[pattern_nr][4] * 10) * sample_rate_ / 400;
-        set_envelope(patterns[pattern_nr][5]); // Envelope needed fixing, but cannot use current solution
+    void set_pattern(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
+        if (accent == true) {
+            randomness = 0;
+        }
+        BD.frequency_ = (snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness) * 60 / 100) + 25;
+        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 4) / 30 + (1 << 4); 
+        BD.harmonics_ = ((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8) / 1000;
+        BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
+        set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
     }
 
     void set_frequency(uint16_t frequency) {
@@ -69,7 +72,7 @@ public:
     }
 
     void set_envelope(uint16_t envelope) {
-        BD.f0_ = BD.frequency_ * envelope / 2; // 2 is for a kick drum range, might want to play around with this
+        BD.f0_ = BD.frequency_ * envelope / 10; // Aimed at a kick drum range, might want to play around with this
         BD.interval_ = 0.05; // TODO: This needs tuning
         BD.slope_ = (BD.frequency_ - BD.f0_) / BD.interval_;
         float y_1 = sin(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));

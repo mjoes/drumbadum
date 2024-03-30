@@ -24,7 +24,9 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_rd = pot_map(100,100);
     uint8_t pot_seq_art = pot_map(300,100);
     uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(600,50);
+    uint8_t pot_snd_1 = pot_map(500,50);
+    uint8_t pot_snd_2 = 50 - pot_map(200,50);
+    uint8_t pot_snd_bd = pot_map(1000,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -88,14 +90,8 @@ int main(int argc, char** argv) {
 
         // Generate waveform sample
         if (hits[1] == 1) {
-            bass_drum.set_pattern(pot_snd_1);
-            // bass_drum.set_frequency(40);
-            // bass_drum.set_envelope(50);  // range 1-1000
-            // bass_drum.set_overdrive(cv_uniform()); // range 1-1000
-            // bass_drum.set_harmonics(20); // range 1-1000
+            bass_drum.set_pattern(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
             bass_drum.set_velocity(500, accent); // range 1-1000
-            // bass_drum.set_decay(cv_uniform()); // range 1-1000
-            // bass_drum.set_attack(0);      // range 1-1000
             bass_drum.set_start();
         }
         // if (hits[2] == 1) {
