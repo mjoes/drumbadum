@@ -27,9 +27,18 @@ public:
         }
     ~HiHat() {}
 
+    void set_pattern(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
+        if (accent == true) {
+            randomness = 0;
+        }
+        set_decay(snd_random(patterns[pattern_nr][6],random_pattern_nr,6,randomness), bernoulli_draw(10));
+        set_frequency(snd_random(patterns[pattern_nr][8],random_pattern_nr,8,randomness));
+        set_bandwidth(snd_random(patterns[pattern_nr][9],random_pattern_nr,9,randomness));
+    }
+
     void set_decay(uint16_t decay, bool decay_type = 0) {
         decay_type_ = decay_type;
-        length_decay_ = decay * sample_rate_ / 500;
+        length_decay_ = decay * sample_rate_ / 50;
         if (decay_type_ == 0) {
             lookup_table_ = exp_env;
         } else {
@@ -38,7 +47,7 @@ public:
     }
 
     void set_frequency(uint16_t frequency) {
-        HH.frequency_ = frequency;
+        HH.frequency_ = frequency * 4000 / 100 + 8000; //range from 8000-12000
         phi_ = 2 * cos(2 * M_PI * HH.frequency_ / sample_rate_);
     }
 
@@ -51,13 +60,15 @@ public:
     }
 
     void set_bandwidth(uint16_t bandwidth) {
-        HH.bandwidth_ = bandwidth;
+        HH.bandwidth_ = bandwidth * 3000 / 100 + 300; //range from 300-3300;
         lambda_ = 1 / tan(M_PI * HH.bandwidth_ / sample_rate_);
     }
 
-    void set_start() {
+    void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
         rel_pos_ = 0;
         running_ = true;
+        set_velocity(500, accent);
+        set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
         a0 = 1 / (1 + lambda_);
         b1 = - lambda_ * phi_ * a0;
         b2 = a0 * (lambda_ - 1);

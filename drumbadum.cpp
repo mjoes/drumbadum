@@ -22,8 +22,13 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_2 = pot_map(900,50);
     uint8_t pot_seq_3 = pot_map(300,50);
     uint8_t pot_seq_rd = pot_map(100,100);
-    uint8_t pot_seq_art = pot_map(300,100);
+    uint8_t pot_seq_art = pot_map(100,100);
     uint8_t pot_seq_turing = pot_map(500,100);
+    uint8_t pot_snd_1 = pot_map(500,50);
+    uint8_t pot_snd_2 = 50 - pot_map(500,50);
+    uint8_t pot_snd_bd = pot_map(100,100);
+    uint8_t pot_snd_hh = pot_map(900,100);
+    uint8_t pot_snd_fm = pot_map(1000,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -34,6 +39,7 @@ int main(int argc, char** argv) {
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
+    bool fm_start = false;
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
@@ -86,31 +92,20 @@ int main(int argc, char** argv) {
         ++step_sample;
 
         // Generate waveform sample
-        if (hits[1] == 1) {
-            bass_drum.set_frequency(40);
-            bass_drum.set_envelope(50);  // range 1-1000
-            bass_drum.set_overdrive(cv_uniform()); // range 1-1000
-            bass_drum.set_harmonics(20); // range 1-1000
-            bass_drum.set_velocity(500, accent); // range 1-1000
-            bass_drum.set_decay(cv_uniform()); // range 1-1000
-            bass_drum.set_attack(0);      // range 1-1000
-            bass_drum.set_start();
-        }
-        if (hits[2] == 1) {
-            hi_hat.set_decay(cv_uniform(),bernoulli_draw(10));
-            hi_hat.set_frequency(cv_uniform(8000,12000));
-            hi_hat.set_velocity(500, accent);
-            hi_hat.set_bandwidth(cv_uniform(300,3000));
-            hi_hat.set_start();
+        if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
+            fm_start = false;
         }
         if (hits[0] == 1) {
-            fm.set_decay(cv_uniform(),0);
-            fm.set_fm_amount(cv_uniform(),0);
-            fm.set_ratio(cv_uniform(150,500));
-            fm.set_velocity(300, accent );
-            fm.set_frequency(74);
-            fm.set_start(); 
+            fm_start = true;
         }
+        if (hits[1] == 1) {
+            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
+        }
+        if (hits[2] == 1) {
+            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
+        }
+
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
 
         for (int i = 0; i < 3; ++i) {

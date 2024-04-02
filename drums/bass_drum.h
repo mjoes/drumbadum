@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <random>
 #include "../utils/envelopes.h"
+#include "../utils/utils.h"
+#include "../pattern/rhythmic_pattern.h"
 
 using namespace std;
 
@@ -25,8 +27,20 @@ public:
         gen_(gen)
         {
             rel_pos_ = 0; 
+            set_attack(0);
         }
     ~BassDrum() {}
+
+    void set_pattern(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
+        if (accent == true) {
+            randomness = 0;
+        }
+        BD.frequency_ = (snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness) * 60 / 100) + 25;
+        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 4) / 30 + (1 << 4); 
+        BD.harmonics_ = ((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8) / 1000;
+        BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
+        set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
+    }
 
     void set_frequency(uint16_t frequency) {
         BD.frequency_ = frequency;
@@ -58,13 +72,28 @@ public:
     }
 
     void set_envelope(uint16_t envelope) {
-        BD.f0_ = BD.frequency_ * envelope / 20; // 20 is for a kick drum range, might want to play around with this
+        BD.f0_ = BD.frequency_ * envelope / 10; // Aimed at a kick drum range, might want to play around with this
         BD.interval_ = 0.05; // TODO: This needs tuning
         BD.slope_ = (BD.frequency_ - BD.f0_) / BD.interval_;
-        BD.phase_end_ = -2 * M_PI * (BD.f0_ + BD.frequency_ ) / 2 * BD.interval_;
+        float y_1 = sin(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
+        float dy_1 = 2 * M_PI * (BD.slope_ * BD.interval_ + BD.f0_) * cos(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
+        float phi_1 = asin(y_1);
+        float phi_2 = M_PI - phi_1;
+        float dz_1 = 2 * M_PI * BD.frequency_ * cos(phi_1);
+        while (phi_1 < 0) { 
+            phi_1 += 2*M_PI;
+        }
+        while (phi_2 > (2*M_PI)){
+            phi_2 = 2*M_PI;
+        }
+        if (dy_1/abs(dy_1) == dz_1/abs(dz_1)) {
+            BD.phase_end_ = phi_1;
+        } else {
+            BD.phase_end_ = phi_2;
+        }
     }
 
-    void set_start() {
+    void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
         rel_pos_ = 0;
         running_ = true;
         end_i_ = length_attack_ + BD.length_decay_;
@@ -72,6 +101,8 @@ public:
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen_);
         }
+        set_velocity(500, accent);
+        set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
     int16_t Process() {
@@ -132,10 +163,10 @@ private:
             
     int16_t GenerateSample(float t) {
         int16_t sample;
-        if (t > BD.interval_) {
-            sample = 32767 * sin(2 * M_PI * BD.frequency_ * t + BD.phase_end_);
+        if (t >= BD.interval_) {
+            sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * (t - BD.interval_) + BD.phase_end_);
         } else {
-            float func = BD.slope_ * pow(t,2) / 2.0 + BD.f0_ * t;
+            float func = BD.slope_ * t * t / 2.0 + BD.f0_ * t;
             sample = 32767 * sin(2.0 * M_PI * func);  
         }
         return sample;
