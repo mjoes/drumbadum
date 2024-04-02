@@ -82,7 +82,7 @@ public:
             return 0;
 
         int32_t sample;
-        sample = bp_filter_2(GenerateSample());
+        sample = bp_filter_2(dis(gen_));
         sample = (sample * HH.velocity_) / 1000;
         sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
         int16_t output = sample;
@@ -101,18 +101,10 @@ private:
     int32_t y_filter[2] = { 0, 0 };
     const uint16_t sample_rate_;
     const uint16_t* lookup_table_;
-    vector<int16_t> flutter_; 
     bool running_, decay_type_;
     mt19937& gen_;
     uniform_int_distribution<int32_t> dis;
     HiHatSculpt HH;
-
-    int32_t GenerateSample() {
-        // Replace this with your own waveform generation logic
-        int32_t sample = dis(gen_);
-
-        return sample;
-    }
 
     int32_t bp_filter_2(int32_t x_n) {
         int32_t filtered = a0 * x_n - a0 * x_filter[1] - b1 * y_filter[0] - b2 * y_filter[1];
