@@ -8,9 +8,7 @@
 using namespace std;
 
 struct HiHatSculpt {
-    float velocity_;
-    uint16_t bandwidth_;
-    uint16_t frequency_;  
+    uint16_t velocity_, bandwidth_, frequency_;
 };
 
 class HiHat {
@@ -53,15 +51,18 @@ public:
 
     void set_velocity(uint16_t velocity, bool accent) {
         if (accent == true) {
-            HH.velocity_ = 1.0;
+            HH.velocity_ = 1000;
         } else {
-            HH.velocity_ = velocity / 1000.0;
+            HH.velocity_ = velocity;
         }
     }
 
     void set_bandwidth(uint16_t bandwidth) {
         HH.bandwidth_ = bandwidth * 3000 / 100 + 300; //range from 300-3300;
         lambda_ = 1 / tan(M_PI * HH.bandwidth_ / sample_rate_);
+        uint8_t index = (bandwidth) * 256 / 100;
+        uint16_t out = lambda[index];
+        // printf("%f,%f\n",lambda_, out / 255.0);
     }
 
     void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
@@ -69,9 +70,9 @@ public:
         running_ = true;
         set_velocity(500, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
-        a0 = 1 / (1 + lambda_);
-        b1 = - lambda_ * phi_ * a0;
-        b2 = a0 * (lambda_ - 1);
+        a0 = 65535 / (1 + lambda_ / 255); // 65,535
+        b1 = - lambda_ * phi_ * a0 / 255;
+        b2 = a0 * ((lambda_ / 255) - 1);
     }
 
     int16_t Process() {
@@ -81,7 +82,7 @@ public:
 
         int32_t sample;
         sample = bp_filter_2(GenerateSample());
-        sample *= HH.velocity_;
+        sample = (sample * HH.velocity_) / 1000;
         sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
         int16_t output = sample;
 
