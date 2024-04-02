@@ -25,9 +25,10 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_art = pot_map(100,100);
     uint8_t pot_seq_turing = pot_map(500,100);
     uint8_t pot_snd_1 = pot_map(500,50);
-    uint8_t pot_snd_2 = 50 - pot_map(200,50);
+    uint8_t pot_snd_2 = 50 - pot_map(500,50);
     uint8_t pot_snd_bd = pot_map(100,100);
     uint8_t pot_snd_hh = pot_map(900,100);
+    uint8_t pot_snd_fm = pot_map(1000,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
 
@@ -38,6 +39,7 @@ int main(int argc, char** argv) {
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
+    bool fm_start = false;
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
@@ -90,20 +92,20 @@ int main(int argc, char** argv) {
         ++step_sample;
 
         // Generate waveform sample
+        if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
+            fm_start = false;
+        }
+        if (hits[0] == 1) {
+            fm_start = true;
+        }
         if (hits[1] == 1) {
             bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
         }
         if (hits[2] == 1) {
             hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
         }
-        // if (hits[0] == 1) {
-        //     fm.set_decay(cv_uniform(),0);
-        //     fm.set_fm_amount(cv_uniform(),0);
-        //     fm.set_ratio(cv_uniform(150,500));
-        //     fm.set_velocity(300, accent );
-        //     fm.set_frequency(74);
-        //     fm.set_start(); 
-        // }
+
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
 
         for (int i = 0; i < 3; ++i) {
