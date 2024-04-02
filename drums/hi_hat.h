@@ -67,11 +67,11 @@ public:
     void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
         rel_pos_ = 0;
         running_ = true;
+        set_velocity(500, accent);
+        set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
         a0 = 1 / (1 + lambda_);
         b1 = - lambda_ * phi_ * a0;
         b2 = a0 * (lambda_ - 1);
-        set_velocity(500, accent);
-        set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
     int16_t Process() {
