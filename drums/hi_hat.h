@@ -85,7 +85,7 @@ public:
         sample = bp_filter_2(dis(gen_));
         sample = (sample * HH.velocity_) / 1000;
         sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
-        int16_t output = sample;
+        int16_t output = sample / 65535;
 
         rel_pos_ += 1;
         if (rel_pos_ >= length_decay_) {
