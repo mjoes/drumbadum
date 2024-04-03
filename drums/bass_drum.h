@@ -142,7 +142,6 @@ private:
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;
         int32_t overdriven_value = (value * BD.overdrive_) >> 4;
-        float scaled_overdriven_value = overdriven_value / 32767.0;
         switch (dist_type){
             case 1: // SOFT clipping 2
                 if (overdriven_value <= -32767) {
@@ -152,7 +151,12 @@ private:
                     clipped_value = 32767;
                 } 
                 else {
-                    clipped_value = 32767 * (scaled_overdriven_value - pow(scaled_overdriven_value,3)/3.0) * (3.0/2.0);
+                    uint32_t scaled_ov = ((overdriven_value) << 15) / 32767 + (1 << 15);
+                    scaled_ov *= (255 / 2);
+                    uint32_t int_pos = ((scaled_ov) >> 15);
+                    int16_t a = env_overdrive[int_pos];
+                    int16_t b = env_overdrive[int_pos + 1];
+                    clipped_value = a + ((b - a) * (scaled_ov & ((1 << 15) - 1)) >> 15);
                 }
                 break;
             case 2: // HARD clipping
