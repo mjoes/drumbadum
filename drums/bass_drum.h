@@ -10,8 +10,9 @@
 using namespace std;
 
 struct BassDrumSculpt {
+
     float interval_, phase_, slope_, phase_end_;
-    uint16_t frequency_, attack_, velocity_, overdrive_, harmonics_, f0_;
+    uint16_t frequency_, period_, attack_, velocity_, overdrive_, harmonics_, f0_, interval_sample_;
     uint32_t length_decay_;
     uint8_t decay_;
 };
@@ -35,7 +36,7 @@ public:
         if (accent == true) {
             randomness = 0;
         }
-        BD.frequency_ = (snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness) * 60 / 100) + 25;
+        set_frequency(snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness));
         BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 4) / 30 + (1 << 4); 
         BD.harmonics_ = ((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8) / 1000;
         BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
@@ -43,7 +44,8 @@ public:
     }
 
     void set_frequency(uint16_t frequency) {
-        BD.frequency_ = frequency;
+        BD.frequency_ = (frequency * 60 / 100) + 25;
+        BD.period_ = sample_rate_ / BD.frequency_;
     }
 
     void set_overdrive(uint16_t overdrive) {
@@ -52,9 +54,9 @@ public:
 
     void set_velocity(uint16_t velocity, bool accent) {
         if (accent == true) {
-            BD.velocity_ = 256;
+            BD.velocity_ = 1000;
         } else {
-            BD.velocity_ = (velocity << 8) / 1000;
+            BD.velocity_ = velocity;
         }
     }
 
@@ -74,6 +76,7 @@ public:
     void set_envelope(uint16_t envelope) {
         BD.f0_ = BD.frequency_ * envelope / 10; // Aimed at a kick drum range, might want to play around with this
         BD.interval_ = 0.05; // TODO: This needs tuning
+        BD.interval_sample_ = sample_rate_ / 20;
         BD.slope_ = (BD.frequency_ - BD.f0_) / BD.interval_;
         float y_1 = sin(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
         float dy_1 = 2 * M_PI * (BD.slope_ * BD.interval_ + BD.f0_) * cos(2 * M_PI * (BD.slope_ * BD.interval_ * BD.interval_ / 2 + BD.f0_ * BD.interval_));
@@ -112,13 +115,12 @@ public:
 
         int32_t sample;
         float t = static_cast<float>(rel_pos_) / sample_rate_;
-
-        sample = GenerateSample(t);
+        sample = GenerateSample();
         sample += GenerateHarmonics(t);
-        sample = (sample * BD.velocity_) >> 8 ;
-        sample *= interpolate_env(rel_pos_, BD.length_decay_, exp_env);
-        int16_t output = Overdrive((sample / 65535), 1);
- 
+        sample = sample * BD.velocity_ / 1000;
+        sample *= (interpolate_env(rel_pos_, BD.length_decay_, exp_env) / 2); // this divide by 2 is cheeky, but otherwise we go out of bounds
+        int16_t output = Overdrive((sample / 32767), 1); // Would be sample /65535 were it not for the above limitation
+
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
             running_ = false;
@@ -161,18 +163,17 @@ private:
         return clipped_value;
     }
             
-    int16_t GenerateSample(float t) {
-        int16_t sample;
-        if (t >= BD.interval_) {
-            sample = 32767 * sin(2.0 * M_PI * BD.frequency_ * (t - BD.interval_) + BD.phase_end_);
-        } else {
-            float func = BD.slope_ * t * t / 2.0 + BD.f0_ * t;
-            sample = 32767 * sin(2.0 * M_PI * func);  
-        }
+    int16_t GenerateSample() {
+        uint16_t pos_ = (rel_pos_ << 15) / BD.period_;
+        uint16_t int_pos = (pos_ & ((1 << 15) - 1)) * 1024 / (1 << 15);
+        int16_t a = sine[int_pos];
+        int16_t b = sine[int_pos + 1];
+        int16_t sample = a + (b - a) * (pos_ & ((1 << 15) - 1) >> 15);
+
         return sample;
     }
 
-    int16_t GenerateHarmonics(float t) {
+    int32_t GenerateHarmonics(float t) {
         int32_t sample;
         sample = 6553 * BD.harmonics_ * sin(2 * M_PI * (220 + flutter_[0]/125.0) * t + 0.5);
         sample += 9810 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
