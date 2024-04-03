@@ -82,7 +82,7 @@ public:
 
         int32_t sample;
         float t = static_cast<float>(rel_pos_) / sample_rate_;
-        float rel_env = interpolate_env(rel_pos_, length_decay_, exp_env);
+        float rel_env = interpolate_env_old(rel_pos_, length_decay_, exp_env);
         sample = GenerateSample(t, rel_env);
         sample *= FM.velocity_;
         sample *= rel_env;
@@ -108,9 +108,9 @@ private:
         float amp_ratio_ = FM.fm_amount_ * rel_env; // Uniform for nows
         float mod_1 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[0] * FM.frequency_) * t);
         float mod_2 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[1] * FM.frequency_) * t);
-        float mod_3 = dis(gen_) * interpolate_env(rel_pos_, 3480, exp_env); // Whitenoise transient
+        float mod_3 = dis(gen_) * interpolate_env_old(rel_pos_, 3480, exp_env); // Whitenoise transient
 
-        int32_t sample = 32767 * sin(2 * M_PI * FM.frequency_ * t + mod_1 + mod_2 + mod_3);
+        int32_t sample = 32767 * sin(2 * M_PI * FM.frequency_ * t + mod_1 + mod_2);// + mod_3);
         
         return sample;
     }

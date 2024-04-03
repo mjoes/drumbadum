@@ -5,3 +5,4 @@ drumbadum
 *.o
 pattern.txt
 .vscode/
+*.txt

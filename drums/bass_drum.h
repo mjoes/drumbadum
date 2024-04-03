@@ -117,7 +117,7 @@ public:
         sample += GenerateHarmonics(t);
         sample = (sample * BD.velocity_) >> 8 ;
         sample *= interpolate_env(rel_pos_, BD.length_decay_, exp_env);
-        int16_t output = Overdrive(sample, 1); // Apply distortion
+        int16_t output = Overdrive((sample / 65535), 1);
  
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
