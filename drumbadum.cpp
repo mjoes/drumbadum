@@ -100,15 +100,15 @@ int main(int argc, char** argv) {
             fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
             fm_start = false;
         }
-        if (hits[0] == 1) {
-            fm_start = true;
-        }
+        // if (hits[0] == 1) {
+        //     fm_start = true;
+        // }
         if (hits[1] == 1) {
             bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
         }
-        if (hits[2] == 1) {
-            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
-        }
+        // if (hits[2] == 1) {
+        //     hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
+        // }
 
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
 
