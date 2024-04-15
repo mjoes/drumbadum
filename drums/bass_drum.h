@@ -3,16 +3,15 @@
 #include <stdio.h>
 #include <algorithm>
 #include <random>
-#include "../utils/envelopes.h"
-#include "../utils/utils.h"
-#include "../pattern/rhythmic_pattern.h"
+#include "envelopes.h"
+#include "utils.h"
+#include "rhythmic_pattern.h"
 
 using namespace std;
 
 struct BassDrumSculpt {
-
     float interval_, phase_, slope_, phase_end_;
-    uint16_t frequency_, period_, attack_, velocity_, overdrive_, harmonics_, f0_, interval_sample_;
+    uint16_t frequency_, period_, attack_, velocity_, overdrive_, harmonics_, harmonics_f0, harmonics_f1, harmonics_f2, f0_, interval_sample_;
     uint32_t length_decay_;
     uint8_t decay_;
 };
@@ -38,9 +37,9 @@ public:
         }
         set_frequency(snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness));
         BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 4) / 30 + (1 << 4); 
-        BD.harmonics_ = ((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8) / 1000;
+        set_harmonics((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8);
         BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
-        set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
+        // set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
     }
 
     void set_frequency(uint16_t frequency) {
@@ -70,7 +69,10 @@ public:
     }
 
     void set_harmonics(uint16_t harmonics) {
-        BD.harmonics_ = (harmonics << 8) / 1000;
+        BD.harmonics_ = harmonics / 1000;
+        BD.harmonics_f0 = 220 + flutter_[0]/125;
+        BD.harmonics_f1 = BD.frequency_ * 78 / 100 + flutter_[1]/125;
+        BD.harmonics_f2 = BD.frequency_ * 102 / 100 + flutter_[2]/125;
     }
 
     void set_envelope(uint16_t envelope) {
@@ -114,9 +116,8 @@ public:
             return 0;
 
         int32_t sample;
-        float t = static_cast<float>(rel_pos_) / sample_rate_;
         sample = GenerateSample();
-        sample += GenerateHarmonics(t);
+        sample += GenerateHarmonics();
         sample = sample * BD.velocity_ / 1000;
         sample *= (interpolate_env(rel_pos_, BD.length_decay_, exp_env) / 2); // this divide by 2 is cheeky, but otherwise we go out of bounds
         int16_t output = Overdrive((sample / 32767), 1); // Would be sample /65535 were it not for the above limitation
@@ -177,12 +178,20 @@ private:
         return sample;
     }
 
-    int32_t GenerateHarmonics(float t) {
-        int32_t sample;
-        sample = 6553 * BD.harmonics_ * sin(2 * M_PI * (220 + flutter_[0]/125.0) * t + 0.5);
-        sample += 9810 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 7.8 + flutter_[1]/125.0) * t + 1.2);
-        sample += 6553 * BD.harmonics_ * sin(2 * M_PI * (BD.frequency_ * 10.2 + flutter_[2]/125.0) * t + 2.1);
-        sample >>= 8;
-        return sample;
+    inline int16_t LookupHarmonics(uint16_t frequency, uint16_t phase_shift, uint8_t scale_factor) {
+        uint16_t pos_ = (rel_pos_ << 15) / (sample_rate_ / frequency);
+        uint16_t int_pos = (phase_shift + ((pos_ & ((1 << 15) - 1)) * 1024 / (1 << 15))) % 1024;;
+        int16_t a = sine[int_pos];
+        int16_t b = sine[int_pos + 1];
+        int16_t base_sample = a + (b - a) * (pos_ & ((1 << 15) - 1) >> 15);
+        
+        return base_sample / scale_factor;
+    }
+
+    int32_t GenerateHarmonics() {
+        int32_t sample_harmonics;
+        sample_harmonics = LookupHarmonics(BD.harmonics_f0, 100, 5) + LookupHarmonics(BD.harmonics_f1, 200, 3) + LookupHarmonics(BD.harmonics_f2, 300, 5);
+        sample_harmonics *= BD.harmonics_ ;
+        return sample_harmonics >> 8;
     }
 };
