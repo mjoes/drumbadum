@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -g
+CXXFLAGS = -std=c++11 -Wall -g -I ./utils/ -I ./pattern/
 SRCS = drumbadum.cpp ./utils/envelopes.cpp ./utils/utils.cpp ./pattern/rhythmic_pattern.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = drumbadum

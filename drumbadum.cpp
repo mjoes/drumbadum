@@ -4,8 +4,8 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
-#include "pattern/rhythmic_pattern.h"
-#include "utils/utils.h"
+#include "rhythmic_pattern.h"
+#include "utils.h"
 #include <random>
 #include <cstring>
 
@@ -96,10 +96,10 @@ int main(int argc, char** argv) {
         ++step_sample;
 
         // Generate waveform sample
-        if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
-            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
-            fm_start = false;
-        }
+        // if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
+        //     fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
+        //     fm_start = false;
+        // }
         // if (hits[0] == 1) {
         //     fm_start = true;
         // }
