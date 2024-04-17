@@ -9,7 +9,7 @@ using namespace std;
 
 struct FmHitSculpt {
     uint16_t frequency_, velocity_, fm_amount_;
-    uint8_t ratio_[2];
+    uint16_t ratio_[2];
 };
 
 class FmHit {
@@ -59,6 +59,8 @@ public:
         uint8_t normalized_ratio = (ratio * 7 / 2 + 150) / 2; // range between 75 and 250
         FM.ratio_[0] = (3 * normalized_ratio * FM.frequency_ / 7);
         FM.ratio_[1] = normalized_ratio * FM.frequency_;
+        tW_0_ = 4294967296 / sample_rate_ * FM.ratio_[0];
+        tW_1_ = 4294967296 / sample_rate_ * FM.ratio_[1];
     }
 
     void set_fm_amount(uint16_t fm_amount, uint8_t fm_type_prb) {
@@ -115,7 +117,7 @@ private:
     uint16_t sample_N;
     uint32_t sampleNr;
     uint16_t samplesPerCycle;
-    uint32_t phase_acc, tW_;
+    uint32_t phase_acc, phase_acc_0, phase_acc_1, tW_, tW_0_, tW_1_;
     uint8_t bitsSine;
     uint16_t phase_inc;
 
@@ -133,8 +135,40 @@ private:
         return base_sample;
     }
 
+    int32_t GenerateSample_old(uint16_t rel_env_old) {
+        float t = static_cast<float>(rel_pos_) / sample_rate_;
+        float rel_env = interpolate_env_old(rel_pos_, length_decay_, exp_env);
+        float amp_ratio_ = FM.fm_amount_ / 100.0f * rel_env; // Uniform for nows
+        float mod_1 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[0]) * t);
+        float mod_2 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[1]) * t);
+
+
+        float mod_3 = dis(gen_) * interpolate_env_old(rel_pos_, 3480, exp_env); // Whitenoise transient
+
+        int32_t sample = 32767 * sin(2 * M_PI * 440 * t + mod_1 + mod_2);// + mod_3);
+        printf("old: %i \n", (sample));
+        return sample;
+    }
+
     int16_t GenerateSample(uint16_t rel_env) {
-        phase_acc += tW_;
+        phase_acc_0 += tW_0_;
+        phase_acc_1 += tW_1_;
+        int32_t mod_0 = cosine[phase_acc_0 >> (32 - bitsSine)] * FM.ratio_[0] / 32767;
+        int32_t mod_1 = cosine[phase_acc_1 >> (32 - bitsSine)] * FM.ratio_[1] / 32767;
+        int32_t total_mod = (mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env / 65535;
+        
+        // printf("%i, ", total_mod);
+        // total_mod = total_mod * FM.fm_amount_ / 100;
+        // printf("%i, ", total_mod);
+        // total_mod = total_mod * rel_env / 65535;
+        // printf("%i ,rel_env: %i \n", total_mod, rel_env);
+        // float accurate = mod_0 * (FM.fm_amount_ / 100.0f) * (rel_env / 65535.0f);
+        // printf("float: %f , int: %i\n",accurate, total_mod);
+        int16_t f_inst = 440 + total_mod;
+        uint32_t tW_new = 4294967296 / sample_rate_ * f_inst;
+        // printf("%i, %i \n", mod_0, f_inst );
+
+        phase_acc += tW_new;
         phase_inc = phase_acc >> (32 - bitsSine);
         int32_t fraction_fp = (phase_acc & ((1 << (32 - bitsSine)) - 1));
         int16_t a = sine[phase_inc];
