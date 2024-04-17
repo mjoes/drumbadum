@@ -7,7 +7,7 @@
 #include "rhythmic_pattern.h"
 #include "utils.h"
 #include <random>
-#include <cstring>
+// #include <cstring>
 
 using namespace std;
 
@@ -19,13 +19,13 @@ int main(int argc, char** argv) {
 
     // Input params
     uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(900,50);
+    uint8_t pot_seq_2 = pot_map(500,50);
     uint8_t pot_seq_3 = pot_map(300,50);
     uint8_t pot_seq_rd = pot_map(100,100);
     uint8_t pot_seq_art = pot_map(100,100);
     uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(500,50);
-    uint8_t pot_snd_2 = 50 - pot_map(500,50);
+    uint8_t pot_snd_1 = pot_map(300,50);
+    uint8_t pot_snd_2 = 50 - pot_map(600,50);
     uint8_t pot_snd_bd = pot_map(100,100);
     uint8_t pot_snd_hh = pot_map(900,100);
     uint8_t pot_snd_fm = pot_map(500,100);
@@ -100,12 +100,12 @@ int main(int argc, char** argv) {
         //     fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
         //     fm_start = false;
         // }
-        // if (hits[0] == 1) {
-        //     fm_start = true;
-        // }
-        if (hits[1] == 1) {
-            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
+        if (hits[0] == 1) {
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
         }
+        // if (hits[1] == 1) {
+        //     bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
+        // }
         // if (hits[2] == 1) {
         //     hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
         // }

@@ -8,9 +8,8 @@
 using namespace std;
 
 struct FmHitSculpt {
-    float fm_amount_, velocity_;
-    uint16_t frequency_;    
-    uint8_t ratio_[2];
+    uint16_t frequency_, velocity_, fm_amount_;
+    uint16_t mod_[2];
 };
 
 class FmHit {
@@ -20,7 +19,9 @@ public:
         mt19937& gen)
         :
         sample_rate_(sample_rate),
+        max_bit_(4294967295),
         gen_(gen),
+        bitsSine(10),
         dis(-1,1)
         {
             rel_pos_ = 0;
@@ -47,23 +48,25 @@ public:
 
     void set_velocity(uint16_t velocity, bool accent) {
         if (accent == true) {
-            FM.velocity_ = 1.0;
+            FM.velocity_ = 1000;
         } else {
-            FM.velocity_ = velocity / 1000.0;
+            FM.velocity_ = velocity;
         }
     }
 
     void set_ratio(uint8_t ratio) {
-        uint8_t normalized_ratio = (ratio * 3.5 + 150) / 2; // range between 75 and 250
-        FM.ratio_[0] = (3 * normalized_ratio / 7);
-        FM.ratio_[1] = normalized_ratio;
+        uint8_t normalized_ratio = (ratio * 7 / 2 + 150) / 2; // range between 75 and 250
+        FM.mod_[0] = (3 * normalized_ratio * FM.frequency_ / 7);
+        FM.mod_[1] = normalized_ratio * FM.frequency_;
+        tW_0_ = max_bit_ / sample_rate_ * FM.mod_[0];
+        tW_1_ = max_bit_ / sample_rate_ * FM.mod_[1];
     }
 
     void set_fm_amount(uint16_t fm_amount, uint8_t fm_type_prb) {
         if (bernoulli_draw(fm_type_prb - 40) == 0) { // Tunes how often it is overdriven
-            FM.fm_amount_ = fm_amount / 100.0;
+            FM.fm_amount_ = fm_amount;
         } else { // bonkers mode
-            FM.fm_amount_ = fm_amount / 1.0;
+            FM.fm_amount_ = fm_amount * 100;
         }
     }
 
@@ -81,40 +84,46 @@ public:
             return 0;
 
         int32_t sample;
-        float t = static_cast<float>(rel_pos_) / sample_rate_;
-        float rel_env = interpolate_env_old(rel_pos_, length_decay_, exp_env);
-        sample = GenerateSample(t, rel_env);
-        sample *= FM.velocity_;
-        sample *= rel_env;
-        int16_t output = sample;
+        uint16_t rel_env = interpolate_env(rel_pos_, length_decay_, exp_env);
+        sample = GenerateSample(rel_env);
+        sample = sample * FM.velocity_ / 1000;
+        sample *= rel_env / 2;
+        int16_t output = sample / 32767; // Again rather cheeky :)
 
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output;           
+        return output;
     }
 
 private:
     uint32_t rel_pos_, end_i_, length_decay_, decay_;
     const uint16_t sample_rate_;
+    const uint32_t max_bit_;
     bool running_;
     mt19937& gen_;
+    uint32_t phase_acc, phase_acc_0, phase_acc_1, tW_0_, tW_1_;
+    const uint8_t bitsSine;
     FmHitSculpt FM;
-
     uniform_int_distribution<int32_t> dis;
 
-    int32_t GenerateSample(float t, float rel_env) {
-        float amp_ratio_ = FM.fm_amount_ * rel_env; // Uniform for nows
-        float mod_1 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[0] * FM.frequency_) * t);
-        float mod_2 = amp_ratio_ * sin(2 * M_PI * (FM.ratio_[1] * FM.frequency_) * t);
-        float mod_3 = dis(gen_) * interpolate_env_old(rel_pos_, 3480, exp_env); // Whitenoise transient
+    int16_t GenerateSample(uint16_t rel_env) {
+        phase_acc_0 += tW_0_;
+        phase_acc_1 += tW_1_;
+        int32_t mod_0 = cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0] / 32767;
+        int32_t mod_1 = cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1] / 32767;
+        int32_t total_mod = (mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env / 65535;
+        int16_t f_inst = 440 + total_mod;
+        uint32_t tW_new = max_bit_ / sample_rate_ * f_inst;
 
-        int32_t sample = 32767 * sin(2 * M_PI * FM.frequency_ * t + mod_1 + mod_2);// + mod_3);
+        phase_acc += tW_new;
+        uint16_t phase_inc = phase_acc >> (32 - bitsSine);
+        int32_t fraction_fp = (phase_acc & ((1 << (32 - bitsSine)) - 1));
+        int16_t a = sine[phase_inc];
+        int16_t b = sine[phase_inc + 1];
+        int16_t base_sample = a + ((b - a) * (fraction_fp) >> 22);
         
-        return sample;
+        return base_sample;
     }
-
-
 };
-
