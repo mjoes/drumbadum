@@ -96,19 +96,15 @@ int main(int argc, char** argv) {
         ++step_sample;
 
         // Generate waveform sample
-        // if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
-        //     fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
-        //     fm_start = false;
-        // }
-        // if (hits[0] == 1) {
-        //     fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
-        // }
+        if (hits[0] == 1) {
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
+        }
         if (hits[1] == 1) {
             bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
         }
-        // if (hits[2] == 1) {
-        //     hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
-        // }
+        if (hits[2] == 1) {
+            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
+        }
 
         samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
 
