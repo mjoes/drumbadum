@@ -4,10 +4,10 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
-#include "pattern/rhythmic_pattern.h"
-#include "utils/utils.h"
+#include "rhythmic_pattern.h"
+#include "utils.h"
 #include <random>
-#include <cstring>
+// #include <cstring>
 
 using namespace std;
 
@@ -19,18 +19,22 @@ int main(int argc, char** argv) {
 
     // Input params
     uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(900,50);
+    uint8_t pot_seq_2 = pot_map(500,50);
     uint8_t pot_seq_3 = pot_map(300,50);
     uint8_t pot_seq_rd = pot_map(100,100);
     uint8_t pot_seq_art = pot_map(100,100);
     uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(500,50);
-    uint8_t pot_snd_2 = 50 - pot_map(500,50);
+    uint8_t pot_snd_1 = pot_map(300,50);
+    uint8_t pot_snd_2 = 50 - pot_map(600,50);
     uint8_t pot_snd_bd = pot_map(100,100);
     uint8_t pot_snd_hh = pot_map(900,100);
-    uint8_t pot_snd_fm = pot_map(1000,100);
+    uint8_t pot_snd_fm = pot_map(500,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 120;
+
+    // uint8_t shift_ = 14;
+    // uint16_t pos_ = (43231 << shift_) / 33123;
+    // printf("pos is %d, %f\n", (pos_ >> shift_), ((double)(pos_ & ((1 << shift_) - 1)) / (1 << shift_)));
 
     // Init variables
     const uint16_t sample_rate = 48000;
@@ -92,12 +96,8 @@ int main(int argc, char** argv) {
         ++step_sample;
 
         // Generate waveform sample
-        if (fm_start == true){ // Logic for nudging FM drum to sample after bass to avoid simultaneous process (CPU load)
-            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
-            fm_start = false;
-        }
         if (hits[0] == 1) {
-            fm_start = true;
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
         }
         if (hits[1] == 1) {
             bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);

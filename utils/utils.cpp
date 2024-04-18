@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "../pattern/rhythmic_pattern.h"
+#include "rhythmic_pattern.h"
 #include <random>
 
 uint16_t cv_uniform(uint16_t lower, uint16_t upper) {
