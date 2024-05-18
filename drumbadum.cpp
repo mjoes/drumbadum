@@ -4,6 +4,7 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
+#include "drums/fx.h"
 #include "rhythmic_pattern.h"
 #include "utils.h"
 #include <random>
@@ -51,6 +52,7 @@ int main(int argc, char** argv) {
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
+    FX fx(sample_rate, 600, gen);
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
