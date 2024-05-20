@@ -19,7 +19,7 @@ class BassDrum {
 public:
     BassDrum(
         uint16_t sample_rate,
-        mt19937& gen) 
+        minstd_rand& gen) 
         : 
         max_bit_(4294967295),
         sample_rate_(sample_rate),
@@ -129,7 +129,7 @@ private:
     vector<int16_t> flutter_; 
     bool running_;
     const uint8_t bitsSine;
-    mt19937& gen_;
+    minstd_rand& gen_;
     normal_distribution<double> d{0, 1000};
     BassDrumSculpt BD;
     Out out;

@@ -16,7 +16,7 @@ class HiHat {
 public:
     HiHat(
         uint16_t sample_rate,
-        mt19937& gen)
+        minstd_rand& gen)
         :
         sample_rate_(sample_rate),
         gen_(gen),
@@ -127,7 +127,7 @@ private:
     const uint16_t sample_rate_;
     const uint16_t* lookup_table_;
     bool running_, decay_type_;
-    mt19937& gen_;
+    minstd_rand& gen_;
     uniform_int_distribution<int16_t> dis;
     uniform_int_distribution<int32_t> dis_wn;
     HiHatSculpt HH;

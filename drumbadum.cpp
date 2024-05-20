@@ -13,7 +13,7 @@ using namespace std;
 
 int main(int argc, char** argv) {
     random_device rd{};
-    mt19937 gen{rd()};
+    minstd_rand gen{rd()};
     int16_t hits[3] = { 0, 0, 0};
     int16_t seq_buffer[3][16] = {0};
 
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
     }
     raw_file.close();
     cout << "Waveform written to 'output.raw'" << endl;
-    
+
     // Plot buffer
     // ofstream dataFile("output.txt", std::ofstream::out | std::ofstream::trunc);
     // for (uint32_t i = 0; i < num_samples; ++i) {

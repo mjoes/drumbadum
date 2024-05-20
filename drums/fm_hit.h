@@ -17,7 +17,7 @@ class FmHit {
 public:
     FmHit(
         uint16_t sample_rate,
-        mt19937& gen
+        minstd_rand& gen
         )
         :
         sample_rate_(sample_rate),
@@ -126,7 +126,7 @@ private:
     const uint16_t sample_rate_;
     const uint32_t max_bit_;
     bool running_;
-    mt19937& gen_;
+    minstd_rand& gen_;
     uint32_t phase_acc, phase_acc_0, phase_acc_1, tW_0_, tW_1_;
     const uint8_t bitsSine;
     FmHitSculpt FM;
