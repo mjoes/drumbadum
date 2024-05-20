@@ -92,7 +92,7 @@ public:
             pan.pan_l = 100 - pan_amount;
             pan.pan_r = 90;
         } else { // pan_left
-        pan.pan_l = 100;
+            pan.pan_l = 100;
             pan.pan_r = 90 + pan_amount;
         }
     }
@@ -137,9 +137,9 @@ private:
     int16_t GenerateSample(uint16_t rel_env) {
         phase_acc_0 += tW_0_;
         phase_acc_1 += tW_1_;
-        int32_t mod_0 = cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0] / 32767;
-        int32_t mod_1 = cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1] / 32767;
-        int32_t total_mod = (mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env / 65535;
+        int32_t mod_0 = (cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0]) >> 15;
+        int32_t mod_1 = (cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1]) >> 15;
+        int32_t total_mod = ((mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env) >> 16;
         int16_t f_inst = 440 + total_mod;
         uint32_t tW_new = max_bit_ / sample_rate_ * f_inst;
 
@@ -148,7 +148,7 @@ private:
         int32_t fraction_fp = (phase_acc & ((1 << (32 - bitsSine)) - 1));
         int16_t a = sine[phase_inc];
         int16_t b = sine[phase_inc + 1];
-        int16_t base_sample = a + ((b - a) * (fraction_fp) >> 22);
+        int16_t base_sample = a + ((b - a) * (fraction_fp) >> (32 - bitsSine));
         
         return base_sample;
     }
