@@ -17,13 +17,14 @@ class FmHit {
 public:
     FmHit(
         uint16_t sample_rate,
-        mt19937& gen)
+        mt19937& gen
+        )
         :
         sample_rate_(sample_rate),
         max_bit_(4294967295),
         gen_(gen),
         bitsSine(10),
-        dis(-1,1)
+        dis(0,200)
         {
             rel_pos_ = 0;
         }
@@ -37,6 +38,7 @@ public:
         set_fm_amount(snd_random(patterns[pattern_nr][11],random_pattern_nr,11,randomness),randomness);
         set_ratio(snd_random(patterns[pattern_nr][12],random_pattern_nr,12,randomness));
         set_frequency(snd_random(patterns[pattern_nr][13],random_pattern_nr,13,randomness));
+        set_panning(randomness * 2, 50);
     }
 
     void set_decay(uint16_t decay, bool decay_type = 0) {
@@ -77,12 +79,22 @@ public:
         end_i_ = length_decay_;
         set_velocity(300, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
-        set_panning();
     }
 
-    void set_panning() {
+    void set_panning(uint8_t threshold, uint8_t amount) {
+        // threshold sets how often we trigger random panning
+        // amount sets how much panning 
+        int16_t pan_amount = 0;
+        if (dis(gen_) > threshold) {
+            pan_amount = (dis(gen_) - 100) * amount / 100;
+        }
+        if (pan_amount > 0) { // pan right
+            pan.pan_l = 100 - pan_amount;
+            pan.pan_r = 90;
+        } else { // pan_left
         pan.pan_l = 100;
-        pan.pan_r = 90;
+            pan.pan_r = 90 + pan_amount;
+        }
     }
 
     Out Process() {

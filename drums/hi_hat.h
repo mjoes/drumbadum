@@ -20,7 +20,9 @@ public:
         :
         sample_rate_(sample_rate),
         gen_(gen),
-        dis(-32767, 32767)
+        dis(0, 200),
+        dis_wn(-32767, 32767)
+
         {
             rel_pos_ = 0;
         }
@@ -33,6 +35,7 @@ public:
         set_decay(snd_random(patterns[pattern_nr][6],random_pattern_nr,6,randomness), bernoulli_draw(10));
         set_frequency(snd_random(patterns[pattern_nr][8],random_pattern_nr,8,randomness));
         set_bandwidth(snd_random(patterns[pattern_nr][9],random_pattern_nr,9,randomness));
+        set_panning(randomness * 2, 50);
     }
 
     void set_decay(uint16_t decay, bool decay_type = 0) {
@@ -71,16 +74,26 @@ public:
         running_ = true;
         set_velocity(500, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
-        set_panning();
 
         a0 = 32767 / (1 + lambda_ / 255); // 65,535
         b1 = - lambda_ / 255 * phi_ * a0 / ((32757 / 2));
         b2 = a0 * lambda_ / 255 - a0;
     }
 
-    void set_panning() {
-        pan.pan_l = 90;
-        pan.pan_r = 100;
+    void set_panning(uint8_t threshold, uint8_t amount) {
+        // threshold sets how often we trigger random panning
+        // amount sets how much panning 
+        int16_t pan_amount = 0;
+        if (dis(gen_) > threshold) {
+            pan_amount = (dis(gen_)) * amount / 100;
+        }
+        if (pan_amount > 0) { // pan right
+            pan.pan_l = 90 - pan_amount;
+            pan.pan_r = 100;
+        } else { // pan_left
+            pan.pan_l = 90;
+            pan.pan_r = 100 + pan_amount;
+        }
     }
 
     Out Process() {
@@ -92,7 +105,7 @@ public:
         }
 
         int32_t sample;
-        sample = bp_filter_2(dis(gen_));
+        sample = bp_filter_2(dis_wn(gen_));
         sample = (sample * HH.velocity_) / 1000;
         sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
         int16_t output = sample / 65535;
@@ -115,7 +128,8 @@ private:
     const uint16_t* lookup_table_;
     bool running_, decay_type_;
     mt19937& gen_;
-    uniform_int_distribution<int32_t> dis;
+    uniform_int_distribution<int16_t> dis;
+    uniform_int_distribution<int32_t> dis_wn;
     HiHatSculpt HH;
     Out out;
     Panning pan;
