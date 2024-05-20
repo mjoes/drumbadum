@@ -71,14 +71,19 @@ public:
         running_ = true;
         set_velocity(500, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
+        set_panning();
 
         a0 = 32767 / (1 + lambda_ / 255); // 65,535
         b1 = - lambda_ / 255 * phi_ * a0 / ((32757 / 2));
         b2 = a0 * lambda_ / 255 - a0;
     }
 
+    void set_panning() {
+        pan.pan_l = 90;
+        pan.pan_r = 100;
+    }
+
     Out Process() {
-        Out out;
         // Generate waveform sample
         if (running_ == false) {
             out.out_l = 0;
@@ -96,8 +101,8 @@ public:
         if (rel_pos_ >= length_decay_) {
             running_ = false;
         }
-        out.out_l = output;
-        out.out_r = output;
+        out.out_l = output * pan.pan_l / 100;
+        out.out_r = output * pan.pan_r / 100;
         return out;         
     }
 
@@ -112,6 +117,8 @@ private:
     mt19937& gen_;
     uniform_int_distribution<int32_t> dis;
     HiHatSculpt HH;
+    Out out;
+    Panning pan;
 
     int32_t bp_filter_2(int32_t x_n) {
         int32_t filtered = a0 * x_n - a0 * x_filter[1] - b1 * y_filter[0] - b2 * y_filter[1];

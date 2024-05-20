@@ -77,10 +77,15 @@ public:
         end_i_ = length_decay_;
         set_velocity(300, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
+        set_panning();
+    }
+
+    void set_panning() {
+        pan.pan_l = 100;
+        pan.pan_r = 90;
     }
 
     Out Process() {
-        Out out;
         // Generate waveform sample
         if (running_ == false) {
             out.out_l = 0;
@@ -99,8 +104,8 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        out.out_l = output;
-        out.out_r = output;
+        out.out_l = output * pan.pan_l / 100;
+        out.out_r = output * pan.pan_r / 100;
         return out;   
     }
 
@@ -113,6 +118,8 @@ private:
     uint32_t phase_acc, phase_acc_0, phase_acc_1, tW_0_, tW_1_;
     const uint8_t bitsSine;
     FmHitSculpt FM;
+    Panning pan;
+    Out out;
     uniform_int_distribution<int32_t> dis;
 
     int16_t GenerateSample(uint16_t rel_env) {

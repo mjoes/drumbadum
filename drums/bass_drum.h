@@ -97,7 +97,6 @@ public:
 
     Out Process() {
         // Generate waveform sample
-        Out out;
         if (running_ == false) {
             out.out_l = 0;
             out.out_r = 0;
@@ -133,6 +132,7 @@ private:
     mt19937& gen_;
     normal_distribution<double> d{0, 1000};
     BassDrumSculpt BD;
+    Out out;
 
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;
