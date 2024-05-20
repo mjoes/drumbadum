@@ -4,33 +4,38 @@ class FX {
 public:
     FX(
         uint16_t sample_rate,
-        uint16_t in_samples,
+        uint16_t nr_samples_l,
+        uint16_t nr_samples_r,
         mt19937& gen)
         :
         sample_rate_(sample_rate),
-        in_samples_(in_samples),
+        in_samples_l(nr_samples_l),
+        in_samples_r(nr_samples_r),
         gen_(gen),
         
-        in_buffer_(in_samples, 0), 
-        buffer_index_(0)
+        in_buffer_l(in_samples_l, 0), 
+        in_buffer_r(in_samples_r, 0), 
+        buffer_index_l(0),
+        buffer_index_r(0)
         // dis(-1,1)
         {
             // in_samples = 480;
         }
     ~FX() {}
 
-    int16_t Process(int16_t sample) {
+    void Process(int16_t &out_l, int16_t &out_r, int16_t sample) {
         int16_t out;
+        out = sample;
         // out = bitCrush(sample, 20);
-        out = combFilter(sample);
-        return out;
+        combFilter(out_l, out_r, out);
     }
 
 private:
-    const uint16_t sample_rate_, in_samples_;
+    const uint16_t sample_rate_, in_samples_l, in_samples_r;
     mt19937& gen_;
-    std::vector<int16_t> in_buffer_;
-    uint16_t buffer_index_;
+    std::vector<int16_t> in_buffer_l;
+    std::vector<int16_t> in_buffer_r;
+    uint16_t buffer_index_l, buffer_index_r;
     // uniform_int_distribution<int32_t> dis;
 
     int16_t bitCrush(int16_t sample, uint8_t depth) {
@@ -45,14 +50,19 @@ private:
         return out;
     }
 
-    int16_t combFilter(int16_t sample) {
-        int16_t read_index = (buffer_index_ + 1) % in_samples_;
-        int16_t in_prev = in_buffer_[read_index];
-        uint8_t g_1 = 2; // inverse of 0.5 // 0.125 ;// 0.5^3
-        int16_t out = sample + in_prev / g_1;// - g_2 * y_prev;
-        in_buffer_[buffer_index_] = sample;
-        buffer_index_ = (buffer_index_ + 1) % in_samples_;
+    void combFilter(int16_t &out_l, int16_t &out_r, int16_t sample) {
+        int16_t read_index_l = (buffer_index_l + 1) % in_samples_l;
+        int16_t read_index_r = (buffer_index_r + 1) % in_samples_r;
+        int16_t in_prev_l = in_buffer_l[read_index_l];
+        int16_t in_prev_r = in_buffer_r[read_index_r];
+        uint8_t g_1 = 2; 
 
-        return out;
+        out_l = sample + in_prev_l / g_1;
+        out_r = sample + in_prev_r / g_1;
+
+        in_buffer_l[buffer_index_l] = sample;
+        in_buffer_r[buffer_index_r] = sample;
+        buffer_index_l = (buffer_index_l + 1) % in_samples_l;
+        buffer_index_r = (buffer_index_r + 1) % in_samples_r;
     }
 };

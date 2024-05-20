@@ -19,19 +19,19 @@ int main(int argc, char** argv) {
     int16_t seq_buffer[3][16] = {0};
 
     // Input params
-    uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(500,50);
-    uint8_t pot_seq_3 = pot_map(300,50);
+    uint8_t pot_seq_1 = pot_map(300,5);
+    uint8_t pot_seq_2 = pot_map(600,50);
+    uint8_t pot_seq_3 = pot_map(400,50);
     uint8_t pot_seq_rd = pot_map(100,100);
-    uint8_t pot_seq_art = pot_map(100,100);
+    uint8_t pot_seq_art = pot_map(400,100);
     uint8_t pot_seq_turing = pot_map(500,100);
     uint8_t pot_snd_1 = pot_map(300,50);
     uint8_t pot_snd_2 = 50 - pot_map(600,50);
-    uint8_t pot_snd_bd = pot_map(100,100);
+    uint8_t pot_snd_bd = pot_map(200,100);
     uint8_t pot_snd_hh = pot_map(900,100);
-    uint8_t pot_snd_fm = pot_map(500,100);
+    uint8_t pot_snd_fm = pot_map(200,100);
     const uint16_t duration = 10;
-    const uint8_t bpm = 120;
+    const uint8_t bpm = 130;
 
     // uint8_t shift_ = 14;
     // uint16_t pos_ = (43231 << shift_) / 33123;
@@ -42,9 +42,13 @@ int main(int argc, char** argv) {
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t left_samples[num_samples] = {0};
     int16_t right_samples[num_samples] = {0};
+<<<<<<< HEAD
     Out bass_drum_out;
     Out hi_hat_out;
     Out fm_out;
+=======
+    int16_t out_l, out_r;
+>>>>>>> 9184567 (Stereo Comb)
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
@@ -52,7 +56,7 @@ int main(int argc, char** argv) {
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
-    FX fx(sample_rate, 600, gen);
+    FX fx(sample_rate, 600, 600, gen);
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
