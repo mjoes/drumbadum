@@ -95,10 +95,14 @@ public:
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
-    int16_t Process() {
+    Out Process() {
         // Generate waveform sample
-        if (running_ == false)
-            return 0;
+        Out out;
+        if (running_ == false) {
+            out.out_l = 0;
+            out.out_r = 0;
+            return out;
+        }
 
         int32_t sample;
         sample = GenerateSample();
@@ -111,7 +115,10 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output;           
+        
+        out.out_l = output;
+        out.out_r = output;
+        return out;          
     }
 
 private:

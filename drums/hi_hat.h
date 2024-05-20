@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include "envelopes.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -76,10 +77,14 @@ public:
         b2 = a0 * lambda_ / 255 - a0;
     }
 
-    int16_t Process() {
+    Out Process() {
+        Out out;
         // Generate waveform sample
-        if (running_ == false)
-            return 0;
+        if (running_ == false) {
+            out.out_l = 0;
+            out.out_r = 0;
+            return out;
+        }
 
         int32_t sample;
         sample = bp_filter_2(dis(gen_));
@@ -91,7 +96,9 @@ public:
         if (rel_pos_ >= length_decay_) {
             running_ = false;
         }
-        return output;           
+        out.out_l = output;
+        out.out_r = output;
+        return out;         
     }
 
 private:

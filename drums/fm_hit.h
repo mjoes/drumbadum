@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include "envelopes.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -78,10 +79,14 @@ public:
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
-    int16_t Process() {
+    Out Process() {
+        Out out;
         // Generate waveform sample
-        if (running_ == false)
-            return 0;
+        if (running_ == false) {
+            out.out_l = 0;
+            out.out_r = 0;
+            return out;
+        }
 
         int32_t sample;
         uint16_t rel_env = interpolate_env(rel_pos_, length_decay_, exp_env);
@@ -94,7 +99,9 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output;
+        out.out_l = output;
+        out.out_r = output;
+        return out;   
     }
 
 private:
