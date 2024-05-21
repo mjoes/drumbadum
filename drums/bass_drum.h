@@ -19,7 +19,7 @@ class BassDrum {
 public:
     BassDrum(
         uint16_t sample_rate,
-        mt19937& gen) 
+        minstd_rand& gen) 
         : 
         max_bit_(4294967295),
         sample_rate_(sample_rate),
@@ -95,10 +95,13 @@ public:
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
-    int16_t Process() {
+    Out Process() {
         // Generate waveform sample
-        if (running_ == false)
-            return 0;
+        if (running_ == false) {
+            out.out_l = 0;
+            out.out_r = 0;
+            return out;
+        }
 
         int32_t sample;
         sample = GenerateSample();
@@ -111,7 +114,10 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output;           
+        
+        out.out_l = output;
+        out.out_r = output;
+        return out;          
     }
 
 private:
@@ -123,9 +129,10 @@ private:
     vector<int16_t> flutter_; 
     bool running_;
     const uint8_t bitsSine;
-    mt19937& gen_;
+    minstd_rand& gen_;
     normal_distribution<double> d{0, 1000};
     BassDrumSculpt BD;
+    Out out;
 
     int16_t Overdrive(int32_t value, uint8_t dist_type) {
         int16_t clipped_value;

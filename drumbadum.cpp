@@ -13,7 +13,7 @@ using namespace std;
 
 int main(int argc, char** argv) {
     random_device rd{};
-    mt19937 gen{rd()};
+    minstd_rand gen{rd()};
     int16_t hits[3] = { 0, 0, 0};
     int16_t seq_buffer[3][16] = {0};
 
@@ -39,7 +39,11 @@ int main(int argc, char** argv) {
     // Init variables
     const uint16_t sample_rate = 48000;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
-    int16_t samples[num_samples] = {0};
+    int16_t left_samples[num_samples] = {0};
+    int16_t right_samples[num_samples] = {0};
+    Out bass_drum_out;
+    Out hi_hat_out;
+    Out fm_out;
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
@@ -106,7 +110,12 @@ int main(int argc, char** argv) {
             hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
         }
 
-        samples[i] = (bass_drum.Process() + hi_hat.Process() + fm.Process())/3;
+        bass_drum_out = bass_drum.Process();
+        hi_hat_out = hi_hat.Process();
+        fm_out = fm.Process();
+
+        left_samples[i] = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
+        right_samples[i] = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
 
         for (int i = 0; i < 3; ++i) {
             hits[i] = 0; // Access each element using array subscript notation
@@ -115,22 +124,25 @@ int main(int argc, char** argv) {
 
     // Write buffer to a raw file
     ofstream raw_file("output.raw", ios::out | ios::binary);
-    if (raw_file.is_open()) {
-        raw_file.write(reinterpret_cast<const char*>(samples), num_samples * sizeof(int16_t));
-        raw_file.close();
-        cout << "Waveform written to 'bass_drum_waveform.raw'" << endl;
-    } else {
+    if (!raw_file.is_open()) {
         cerr << "Error: Unable to open file for writing!" << endl;
         return 1;
     }
-    // Plot buffer
-    ofstream dataFile("output.txt", std::ofstream::out | std::ofstream::trunc);
-    for (uint32_t i = 0; i < num_samples; ++i) {
-        dataFile << static_cast<float>(i)/sample_rate << " " << samples[i]/32767.0f << "\n";
+    for (size_t i = 0; i < num_samples; ++i) {
+        raw_file.write(reinterpret_cast<const char*>(&left_samples[i]), sizeof(int16_t));
+        raw_file.write(reinterpret_cast<const char*>(&right_samples[i]), sizeof(int16_t));
     }
-    cout << "Data written to output.txt" << endl;
-    dataFile.close();
+    raw_file.close();
+    cout << "Waveform written to 'output.raw'" << endl;
 
-    return 0;
+    // Plot buffer
+    // ofstream dataFile("output.txt", std::ofstream::out | std::ofstream::trunc);
+    // for (uint32_t i = 0; i < num_samples; ++i) {
+    //     dataFile << static_cast<float>(i)/sample_rate << " " << samples[i]/32767.0f << "\n";
+    // }
+    // cout << "Data written to output.txt" << endl;
+    // dataFile.close();
+
+    // return 0;
 }
 

@@ -6,3 +6,4 @@ drumbadum
 pattern.txt
 .vscode/
 *.txt
+gmon.out

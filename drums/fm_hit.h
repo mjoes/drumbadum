@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include "envelopes.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -16,13 +17,14 @@ class FmHit {
 public:
     FmHit(
         uint16_t sample_rate,
-        mt19937& gen)
+        minstd_rand& gen
+        )
         :
         sample_rate_(sample_rate),
         max_bit_(4294967295),
         gen_(gen),
         bitsSine(10),
-        dis(-1,1)
+        dis(0,200)
         {
             rel_pos_ = 0;
         }
@@ -36,6 +38,7 @@ public:
         set_fm_amount(snd_random(patterns[pattern_nr][11],random_pattern_nr,11,randomness),randomness);
         set_ratio(snd_random(patterns[pattern_nr][12],random_pattern_nr,12,randomness));
         set_frequency(snd_random(patterns[pattern_nr][13],random_pattern_nr,13,randomness));
+        set_panning(randomness * 2, 50);
     }
 
     void set_decay(uint16_t decay, bool decay_type = 0) {
@@ -78,10 +81,29 @@ public:
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
     }
 
-    int16_t Process() {
+    void set_panning(uint8_t threshold, uint8_t amount) {
+        // threshold sets how often we trigger random panning
+        // amount sets how much panning 
+        int16_t pan_amount = 0;
+        if (dis(gen_) > threshold) {
+            pan_amount = (dis(gen_) - 100) * amount / 100;
+        }
+        if (pan_amount > 0) { // pan right
+            pan.pan_l = 100 - pan_amount;
+            pan.pan_r = 90;
+        } else { // pan_left
+            pan.pan_l = 100;
+            pan.pan_r = 90 + pan_amount;
+        }
+    }
+
+    Out Process() {
         // Generate waveform sample
-        if (running_ == false)
-            return 0;
+        if (running_ == false) {
+            out.out_l = 0;
+            out.out_r = 0;
+            return out;
+        }
 
         int32_t sample;
         uint16_t rel_env = interpolate_env(rel_pos_, length_decay_, exp_env);
@@ -94,7 +116,9 @@ public:
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        return output;
+        out.out_l = output * pan.pan_l / 100;
+        out.out_r = output * pan.pan_r / 100;
+        return out;   
     }
 
 private:
@@ -102,18 +126,20 @@ private:
     const uint16_t sample_rate_;
     const uint32_t max_bit_;
     bool running_;
-    mt19937& gen_;
+    minstd_rand& gen_;
     uint32_t phase_acc, phase_acc_0, phase_acc_1, tW_0_, tW_1_;
     const uint8_t bitsSine;
     FmHitSculpt FM;
+    Panning pan;
+    Out out;
     uniform_int_distribution<int32_t> dis;
 
     int16_t GenerateSample(uint16_t rel_env) {
         phase_acc_0 += tW_0_;
         phase_acc_1 += tW_1_;
-        int32_t mod_0 = cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0] / 32767;
-        int32_t mod_1 = cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1] / 32767;
-        int32_t total_mod = (mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env / 65535;
+        int32_t mod_0 = (cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0]) >> 15;
+        int32_t mod_1 = (cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1]) >> 15;
+        int32_t total_mod = ((mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env) >> 16;
         int16_t f_inst = 440 + total_mod;
         uint32_t tW_new = max_bit_ / sample_rate_ * f_inst;
 
@@ -122,7 +148,7 @@ private:
         int32_t fraction_fp = (phase_acc & ((1 << (32 - bitsSine)) - 1));
         int16_t a = sine[phase_inc];
         int16_t b = sine[phase_inc + 1];
-        int16_t base_sample = a + ((b - a) * (fraction_fp) >> 22);
+        int16_t base_sample = a + ((b - a) * (fraction_fp) >> (32 - bitsSine));
         
         return base_sample;
     }
