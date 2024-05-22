@@ -42,21 +42,17 @@ int main(int argc, char** argv) {
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t left_samples[num_samples] = {0};
     int16_t right_samples[num_samples] = {0};
-<<<<<<< HEAD
+    int16_t out_l, out_r;
     Out bass_drum_out;
     Out hi_hat_out;
     Out fm_out;
-=======
-    int16_t out_l, out_r;
->>>>>>> 9184567 (Stereo Comb)
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
-    bool fm_start = false;
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
-    FX fx(sample_rate, 600, 600, gen);
+    FX fx(sample_rate, gen);
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
@@ -120,8 +116,10 @@ int main(int argc, char** argv) {
         hi_hat_out = hi_hat.Process();
         fm_out = fm.Process();
 
-        left_samples[i] = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
-        right_samples[i] = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
+        out_l = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
+        out_r = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
+
+        fx.Process(&left_samples[i], &right_samples[i], &out_l, &out_r);
 
         for (int i = 0; i < 3; ++i) {
             hits[i] = 0; // Access each element using array subscript notation
