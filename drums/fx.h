@@ -28,8 +28,10 @@ public:
     ~FX() {}
 
     void Process(int16_t *out_l, int16_t *out_r, int16_t *in_l, int16_t *in_r) {
-        out_l_ = bitCrush(*in_l, 20);
-        out_r_ = bitCrush(*in_r, 20);
+        out_l_ = bitCrush(*in_l, 50);
+        out_r_ = bitCrush(*in_r, 50);
+        out_l_ = waveFolder(out_l_, 80, 64);
+        out_r_ = waveFolder(out_r_, 80, 64);
         out_l_ = combFilter(out_l_, &buffer_index_l, in_samples_l, in_buffer_l);
         out_r_ = combFilter(out_r_, &buffer_index_r, in_samples_r, in_buffer_r);
         out_l_ = ringMod(out_l_, tW_l, &phase_acc_l);
@@ -59,7 +61,7 @@ private:
     uint16_t buffer_index_l, buffer_index_r;
     // uniform_int_distribution<int32_t> dis;
 
-    int16_t bitCrush(int16_t sample, uint8_t depth) {
+    int32_t bitCrush(int16_t sample, uint8_t depth) {
         // depth between 1-50
         int32_t out;
         out = ((sample + 32768) * depth) >> 16;
@@ -87,10 +89,28 @@ private:
         int16_t a = sine[phase_inc];
         int16_t b = sine[phase_inc + 1];
         int16_t ring_sample = a + ((b - a) * (fraction_fp) >> 22);
-        int32_t out = (sample * ring_sample) >> 12;
+        int32_t out = (sample * (ring_sample / 3)) >> 12;
         
-        return (out + sample) / 2;
+        return (out + sample * 2) / 3;
     }
+
+    int16_t waveFolder(int32_t sample, int16_t amount, int16_t bias) {
+        // Very bare bones
+        // amount from 0-127
+        // bias from 0-127
+        int32_t driven_sample = sample + (bias - 64) * 100;
+        uint16_t threshold = 32767 - 10000 - amount * 100;
+        int32_t out = driven_sample;
+        // printf("%i , %i, %i \n", sample, driven_sample, threshold);
+        if (driven_sample <= -threshold) {
+            out = -threshold + (-threshold - driven_sample);
+        } 
+        else if (driven_sample >= threshold) {
+            out = threshold - (driven_sample - threshold);
+        } 
+        return static_cast<int16_t>(out);
+    }
+
 
     int16_t Overdrive(int32_t value) {
         int16_t clipped_value;
