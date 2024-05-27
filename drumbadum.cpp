@@ -116,7 +116,6 @@ int main(int argc, char** argv) {
             hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
         }
 
-
         bass_drum_out = bass_drum.Process();
         hi_hat_out = hi_hat.Process();
         fm_out = fm.Process();

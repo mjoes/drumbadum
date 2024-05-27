@@ -15,6 +15,7 @@ public:
         bitsSine(10),
         max_bit_(4294967295),
         flip_(false),
+		running_(false),
         gen_(gen),
         in_buffer_l{},
         in_buffer_r{},
@@ -39,21 +40,22 @@ public:
         }
     }
 
-    void Process(int16_t *out_l, int16_t *out_r, int16_t *in_l, int16_t *in_r) {
+    void Process(int16_t *out_l, int16_t *out_r, int16_t *in_l, int16_t *in_r, uint8_t pot_volume, uint8_t vol_scaling) {
+        // Having speed issues on the STM32
         if (running_ == false) {
-            *out_l = *in_l;
-            *out_r = *in_r;
+            *out_l = (*in_l * pot_volume / vol_scaling) >> 7;
+            *out_r = (*in_r * pot_volume / vol_scaling) >> 7;
         } else {
             out_l_ = *in_l;
             out_r_ = *in_r;
-            if (param_chance_[0]){
-                out_l_ = bitCrush(*in_l, patterns[param_id_][0]);
-                out_r_ = bitCrush(*in_r, patterns[param_id_][0]);
-            }
-            if (param_chance_[1]){
-                out_l_ = waveFolder(out_l_, 80, 64);
-                out_r_ = waveFolder(out_r_, 80, 64);
-            }
+//            if (param_chance_[0]){
+//                out_l_ = bitCrush(*in_l, 50);
+//                out_r_ = bitCrush(*in_r, 50);
+//            }
+//            if (param_chance_[1]){
+//                out_l_ = waveFolder(out_l_, 100, 64);
+//                out_r_ = waveFolder(out_r_, 100, 64);
+//            }
             if (param_chance_[2]){
                 out_l_ = combFilter(out_l_, &buffer_index_l, in_samples_l, in_buffer_l);
                 out_r_ = combFilter(out_r_, &buffer_index_r, in_samples_r, in_buffer_r);
@@ -62,15 +64,15 @@ public:
                 out_l_ = ringMod(out_l_, tW_l, &phase_acc_l);
                 out_r_ = ringMod(out_r_, tW_r, &phase_acc_r);
             }
-            if (param_chance_[4]){      
-                out_l_ = artifacts(out_l_);
-                out_r_ = artifacts(out_r_); 
-            }
-            out_l_ = Overdrive(out_l_);
-            out_r_ = Overdrive(out_r_);
-            *out_l = out_l_;
-            *out_r = out_r_;
-            
+//            if (param_chance_[4]){
+//                out_l_ = artifacts(out_l_);
+//                out_r_ = artifacts(out_r_);
+//            }
+            out_l_ = Overdrive(out_l_) / 2; // reduce volume of FX to align with dry sound
+            out_r_ = Overdrive(out_r_) / 2;
+            *out_l = (out_l_ * pot_volume / vol_scaling) >> 7;
+            *out_r = (out_r_ * pot_volume / vol_scaling) >> 7;
+
         }
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
@@ -121,7 +123,7 @@ private:
 
         in_buffer[*buffer_index] = sample;
         *buffer_index = (*buffer_index + 1) % in_samples;
-        
+
         return out;
     }
 
@@ -133,16 +135,16 @@ private:
         int16_t b = sine[phase_inc + 1];
         int16_t ring_sample = a + ((b - a) * (fraction_fp) >> 22);
         int32_t out = (sample * (ring_sample / 3)) >> 12;
-        
+
         return (out + sample * 2) / 3;
     }
 
 
     int32_t artifacts(int32_t sample){
-        int16_t chance = dis(gen_) + 1024;
+        int16_t chance = rand() % 100;
         int32_t out = sample;
-        if (chance < 5){
-            out = -out; // semi harsh crackle
+        if (chance < 2){
+//            out = -out; // semi harsh crackle
             // out - out + dis(gen_) * 2; // White noise type crackle
             // flip_ = !flip_; // for the fully deciate below
         }
@@ -150,7 +152,7 @@ private:
         // if (flip_) {
         //     out = -out;
         // }
-        
+
         return out;
     }
 
@@ -164,10 +166,10 @@ private:
         // printf("%i , %i, %i \n", sample, driven_sample, threshold);
         if (driven_sample <= -threshold) {
             out = -threshold + (-threshold - driven_sample);
-        } 
+        }
         else if (driven_sample >= threshold) {
             out = threshold - (driven_sample - threshold);
-        } 
+        }
         return static_cast<int16_t>(out);
     }
 
@@ -175,17 +177,18 @@ private:
         int16_t clipped_value;
         if (value <= -32767) {
             clipped_value = -32767;
-        } 
+        }
         else if (value >= 32767) {
             clipped_value = 32767;
-        } 
+        }
         else {
-            uint32_t scaled_ov = ((value) << 15) / 32767 + (1 << 15);
-            scaled_ov *= (255 / 2);
-            uint32_t int_pos = ((scaled_ov) >> 15);
-            int16_t a = env_overdrive[int_pos];
-            int16_t b = env_overdrive[int_pos + 1];
-            clipped_value = a + ((b - a) * (scaled_ov & ((1 << 15) - 1)) >> 15);
+        	clipped_value = value; // Faster than below
+//            uint32_t scaled_ov = ((value) << 15) / 32767 + (1 << 15);
+//            scaled_ov *= (255 / 2);
+//            uint32_t int_pos = ((scaled_ov) >> 15);
+//            int16_t a = env_overdrive[int_pos];
+//            int16_t b = env_overdrive[int_pos + 1];
+//            clipped_value = a + ((b - a) * (scaled_ov & ((1 << 15) - 1)) >> 15);
         }
         return clipped_value;
     }
