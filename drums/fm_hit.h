@@ -46,7 +46,7 @@ public:
     }
 
     void set_frequency(uint8_t frequency) {
-        FM.frequency_ = frequency / 3 + 60; // range between 60 and 90
+        FM.frequency_ = beta_inv[frequency]; 
     }
 
     void set_velocity(uint16_t velocity, bool accent) {
@@ -140,7 +140,7 @@ private:
         int32_t mod_0 = (cosine[phase_acc_0 >> (32 - bitsSine)] * FM.mod_[0]) >> 15;
         int32_t mod_1 = (cosine[phase_acc_1 >> (32 - bitsSine)] * FM.mod_[1]) >> 15;
         int32_t total_mod = ((mod_0 + mod_1) * FM.fm_amount_ / 100 * rel_env) >> 16;
-        int16_t f_inst = 440 + total_mod;
+        int16_t f_inst = FM.frequency_ + total_mod;
         uint32_t tW_new = max_bit_ / sample_rate_ * f_inst;
 
         phase_acc += tW_new;

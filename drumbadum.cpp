@@ -4,6 +4,7 @@
 #include "drums/bass_drum.h"
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
+#include "drums/fx.h"
 #include "rhythmic_pattern.h"
 #include "utils.h"
 #include <random>
@@ -18,19 +19,20 @@ int main(int argc, char** argv) {
     int16_t seq_buffer[3][16] = {0};
 
     // Input params
-    uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(500,50);
-    uint8_t pot_seq_3 = pot_map(300,50);
+    uint8_t pot_seq_1 = pot_map(300,5);
+    uint8_t pot_seq_2 = pot_map(600,50);
+    uint8_t pot_seq_3 = pot_map(400,50);
     uint8_t pot_seq_rd = pot_map(100,100);
-    uint8_t pot_seq_art = pot_map(100,100);
+    uint8_t pot_seq_art = pot_map(400,100);
     uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(300,50);
+    uint8_t pot_snd_1 = pot_map(400,50);
     uint8_t pot_snd_2 = 50 - pot_map(600,50);
-    uint8_t pot_snd_bd = pot_map(100,100);
+    uint8_t pot_snd_bd = pot_map(200,100);
     uint8_t pot_snd_hh = pot_map(900,100);
-    uint8_t pot_snd_fm = pot_map(500,100);
+    uint8_t pot_snd_fm = pot_map(10,100);
+    uint8_t pot_xtra = pot_map(100,100);
     const uint16_t duration = 10;
-    const uint8_t bpm = 120;
+    const uint8_t bpm = 130;
 
     // uint8_t shift_ = 14;
     // uint16_t pos_ = (43231 << shift_) / 33123;
@@ -41,16 +43,17 @@ int main(int argc, char** argv) {
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t left_samples[num_samples] = {0};
     int16_t right_samples[num_samples] = {0};
+    int16_t out_l, out_r;
     Out bass_drum_out;
     Out hi_hat_out;
     Out fm_out;
     srand(time(NULL));
 
     // Initialize and define BassDrum & HiHat processor
-    bool fm_start = false;
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
+    FX fx(sample_rate, gen);
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
@@ -62,14 +65,14 @@ int main(int argc, char** argv) {
     // Generate waveform samples and store them in a buffer
     uint8_t step = 0;
     uint16_t step_sample = 0;
-    uint8_t glitch = 0;
+    uint8_t stutter = 0;
     bool accent = false;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
-        // disabling glitch
-        // if (step_sample % glitch_sample == 0 && glitch / 10 > 0) {
-        //     hits[glitch % 10]=1;
-        //     glitch -= 10;
+        // disabling stutter
+        // if (step_sample % stutter_sample == 0 && stutter / 10 > 0) {
+        //     hits[stutter % 10]=1;
+        //     stutter -= 10;
         // }
         if (step_sample == steps_sample){
             if (pot_seq_turing < 20 || pot_seq_turing > 80 ) {
@@ -85,7 +88,7 @@ int main(int argc, char** argv) {
                     chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
                     accent = false;
                 }
-                glitch = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
+                stutter = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
 
                 for (int i = 0; i < 3; ++i) {
                     seq_buffer[i][step] = hits[i];
@@ -96,6 +99,9 @@ int main(int argc, char** argv) {
             if (step > 15) {
                 step = 0;
             }
+            if ((rand() % 100) < pot_xtra ) {
+                fx.set_start(steps_sample);
+            } 
         }
         ++step_sample;
 
@@ -114,8 +120,12 @@ int main(int argc, char** argv) {
         hi_hat_out = hi_hat.Process();
         fm_out = fm.Process();
 
-        left_samples[i] = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
-        right_samples[i] = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
+        out_l = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
+        out_r = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
+
+
+        fx.Process(&left_samples[i], &right_samples[i], &out_l, &out_r);
+
 
         for (int i = 0; i < 3; ++i) {
             hits[i] = 0; // Access each element using array subscript notation
