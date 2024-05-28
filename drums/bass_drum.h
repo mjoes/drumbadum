@@ -77,6 +77,9 @@ public:
     }
 
     void set_envelope(uint16_t envelope) {
+        if (envelope < 50){
+            envelope = 50;
+        }
         uint16_t f0_ = BD.frequency_ * envelope / 50; // Aimed at a kick drum range, might want to play around with this
         d_freq_ = ((f0_ - BD.frequency_) << 15) * 20 / 48000; // the number 20 can be tuned for length of decay
         inst_freq_ = (f0_ << 15);
@@ -109,7 +112,7 @@ public:
         sample = sample * BD.velocity_ / 1000;
         sample *= (interpolate_env(rel_pos_, BD.length_decay_, exp_env) / 2); // this divide by 2 is cheeky, but otherwise we go out of bounds
         int16_t output = Overdrive((sample / 32767), 1); // Would be sample /65535 were it not for the above limitation
-
+        
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
             running_ = false;

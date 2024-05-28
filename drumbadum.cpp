@@ -26,11 +26,12 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_art = pot_map(400,100);
     uint8_t pot_seq_turing = pot_map(500,100);
     uint8_t pot_snd_1 = pot_map(400,50);
-    uint8_t pot_snd_2 = 50 - pot_map(600,50);
-    uint8_t pot_snd_bd = pot_map(200,100);
+    uint8_t pot_snd_2 = 50 - pot_map(500,50);
+    uint8_t pot_snd_bd = pot_map(300,100);
     uint8_t pot_snd_hh = pot_map(900,100);
     uint8_t pot_snd_fm = pot_map(10,100);
-    uint8_t pot_xtra = pot_map(100,100);
+    uint8_t pot_xtra = pot_map(0,100);
+    uint8_t pot_volume = pot_map(1000,100);
     const uint16_t duration = 10;
     const uint8_t bpm = 130;
 
@@ -120,12 +121,10 @@ int main(int argc, char** argv) {
         hi_hat_out = hi_hat.Process();
         fm_out = fm.Process();
 
-        out_l = (bass_drum_out.out_l + hi_hat_out.out_l + fm_out.out_l)/3;
-        out_r = (bass_drum_out.out_r + hi_hat_out.out_r + fm_out.out_r)/3;
+        out_l = (bass_drum_out.out_l * 10 + hi_hat_out.out_l * 15 + fm_out.out_l * 8)/20;
+        out_r = (bass_drum_out.out_r * 10 + hi_hat_out.out_r * 15 + fm_out.out_r * 8)/20;
 
-
-        fx.Process(&left_samples[i], &right_samples[i], &out_l, &out_r);
-
+        fx.Process(&left_samples[i], &right_samples[i], &out_l, &out_r, pot_volume, 5);
 
         for (int i = 0; i < 3; ++i) {
             hits[i] = 0; // Access each element using array subscript notation
