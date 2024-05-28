@@ -25,9 +25,9 @@ int main(int argc, char** argv) {
     uint8_t pot_seq_rd = pot_map(100,100);
     uint8_t pot_seq_art = pot_map(400,100);
     uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(400,50);
-    uint8_t pot_snd_2 = 50 - pot_map(500,50);
-    uint8_t pot_snd_bd = pot_map(300,100);
+    uint8_t pot_snd_1 = pot_map(300,50);
+    uint8_t pot_snd_2 = 50 - pot_map(600,50);
+    uint8_t pot_snd_bd = pot_map(900,100);
     uint8_t pot_snd_hh = pot_map(900,100);
     uint8_t pot_snd_fm = pot_map(10,100);
     uint8_t pot_xtra = pot_map(0,100);

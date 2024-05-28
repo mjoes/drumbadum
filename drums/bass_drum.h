@@ -10,7 +10,7 @@
 using namespace std;
 
 struct BassDrumSculpt {
-    uint16_t frequency_, period_, attack_, velocity_, overdrive_, harmonics_, harmonics_f0, harmonics_f1, harmonics_f2;
+    uint16_t frequency_, period_, velocity_, overdrive_, harmonics_, harmonics_f0, harmonics_f1, harmonics_f2;
     uint32_t length_decay_;
     uint8_t decay_;
 };
@@ -28,7 +28,7 @@ public:
         gen_(gen)
         {
             rel_pos_ = 0; 
-            set_attack(0);
+            // set_attack(0);
         }
     ~BassDrum() {}
 
@@ -64,10 +64,11 @@ public:
         BD.length_decay_ = decay * sample_rate_ / 400;
     }
 
-    void set_attack(uint16_t attack) {
-        BD.attack_ = 1001 - attack;
-        length_attack_ = sample_rate_ / BD.attack_;
-    }
+    // UNUSED
+    // void set_attack(uint16_t attack) {
+    //     BD.attack_ = 1001 - attack;
+    //     length_attack_ = sample_rate_ / BD.attack_;
+    // }
 
     void set_harmonics(uint16_t harmonics) {
         BD.harmonics_ = harmonics / 1000;
@@ -89,13 +90,13 @@ public:
         rel_pos_ = 0;
         phase_acc = 0;
         running_ = true;
-        end_i_ = length_attack_ + BD.length_decay_;
-
+        
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen_);
         }
         set_velocity(500, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
+        end_i_ = BD.length_decay_;
     }
 
     Out Process() {
@@ -105,15 +106,15 @@ public:
             out.out_r = 0;
             return out;
         }
-
         int32_t sample;
         sample = GenerateSample();
         // sample += GenerateHarmonics();
-        sample = sample * BD.velocity_ / 1000;
-        sample *= (interpolate_env(rel_pos_, BD.length_decay_, exp_env) / 2); // this divide by 2 is cheeky, but otherwise we go out of bounds
-        int16_t output = Overdrive((sample / 32767), 1); // Would be sample /65535 were it not for the above limitation
+        sample = (sample * BD.velocity_) >> 10; //  /1024
+        interpolate_env_alt(&sample, rel_pos_, BD.length_decay_, exp_env); 
+        int16_t output = Overdrive(sample, 1);
         
         rel_pos_ += 1;
+
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
@@ -126,7 +127,6 @@ public:
 private:
     uint32_t rel_pos_, end_i_, phase_acc, tW_, d_freq_, inst_freq_;
     const uint32_t max_bit_;
-    uint16_t length_attack_;
     const uint16_t sample_rate_;
     const uint16_t* lookup_table_;
     vector<int16_t> flutter_; 

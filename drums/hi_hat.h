@@ -106,8 +106,8 @@ public:
         int32_t sample;
         sample = bp_filter_2(rand() % 65535 - 32767);
         sample = (sample * HH.velocity_) / 1000;
-        sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
-        int16_t output = sample / 65535;
+        interpolate_env_alt(&sample, rel_pos_, length_decay_, lookup_table_); 
+        int16_t output = sample;
 
         rel_pos_ += 1;
         if (rel_pos_ >= length_decay_) {
