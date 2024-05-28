@@ -37,7 +37,7 @@ public:
             randomness = 0;
         }
         set_frequency(snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness));
-        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 4) / 30 + (1 << 4); 
+        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 8) / 30 + (1 << 8); 
         set_harmonics((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8);
         BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
         set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
@@ -111,7 +111,7 @@ public:
         // sample += GenerateHarmonics();
         sample = (sample * BD.velocity_) >> 10; //  /1024
         interpolate_env_alt(&sample, rel_pos_, BD.length_decay_, exp_env); 
-        int16_t output = Overdrive(sample, 1);
+        int16_t output = Overdrive(sample);
         
         rel_pos_ += 1;
 
@@ -137,31 +137,25 @@ private:
     BassDrumSculpt BD;
     Out out;
 
-    int16_t Overdrive(int32_t value, uint8_t dist_type) {
+    int16_t Overdrive(int32_t value) {
         int16_t clipped_value;
-        int32_t overdriven_value = (value * BD.overdrive_) >> 4;
-        switch (dist_type){
-            case 1: // SOFT clipping 2
-                if (overdriven_value <= -32767) {
-                    clipped_value = -32767;
-                } 
-                else if (overdriven_value >= 32767) {
-                    clipped_value = 32767;
-                } 
-                else {
-                    uint32_t scaled_ov = ((overdriven_value) << 15) / 32767 + (1 << 15);
-                    scaled_ov *= (255 / 2);
-                    uint32_t int_pos = ((scaled_ov) >> 15);
-                    int16_t a = env_overdrive[int_pos];
-                    int16_t b = env_overdrive[int_pos + 1];
-                    clipped_value = a + ((b - a) * (scaled_ov & ((1 << 15) - 1)) >> 15);
-                }
-                break;
-            case 2: // HARD clipping
-                clipped_value = 0.5 * (fabs(overdriven_value + 32767) - fabs(overdriven_value - 32767));
-                break;
-                
+        int32_t overdriven_value = (value * BD.overdrive_) >> 8;
+        if (overdriven_value <= -32768) {
+            clipped_value = -32768;
+        } 
+        else if (overdriven_value >= 32767) {
+            clipped_value = 32767;
+        } 
+        else {
+            uint32_t scaled_ov = overdriven_value + (1 << 15);
+            scaled_ov <<= 7;
+            uint32_t int_pos = (scaled_ov) >> 15;
+            int16_t a = env_overdrive[int_pos];
+            int16_t b = env_overdrive[int_pos + 1];
+            clipped_value = a + ((b - a) * (scaled_ov & ((1 << 15) - 1)) >> 15);
         }
+        // HARD CLIPPING
+        // clipped_value = 0.5 * (fabs(overdriven_value + 32767) - fabs(overdriven_value - 32767));
         return clipped_value;
     }
             
