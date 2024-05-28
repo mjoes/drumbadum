@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     // printf("pos is %d, %f\n", (pos_ >> shift_), ((double)(pos_ & ((1 << shift_) - 1)) / (1 << shift_)));
 
     // Init variables
-    const uint16_t sample_rate = 48000;
+    const uint16_t sample_rate = 44100;
     uint32_t num_samples = duration * sample_rate; // Number of samples (assuming 1 second at 48kHz)
     int16_t left_samples[num_samples] = {0};
     int16_t right_samples[num_samples] = {0};

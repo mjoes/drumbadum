@@ -81,7 +81,7 @@ public:
             envelope = 50;
         }
         uint16_t f0_ = BD.frequency_ * envelope / 50; // Aimed at a kick drum range, might want to play around with this
-        d_freq_ = ((f0_ - BD.frequency_) << 15) * 20 / 48000; // the number 20 can be tuned for length of decay
+        d_freq_ = ((f0_ - BD.frequency_) << 15) * 20 / sample_rate_; // the number 20 can be tuned for length of decay
         inst_freq_ = (f0_ << 15);
     }
 
