@@ -48,14 +48,14 @@ public:
         } else {
             out_l_ = *in_l;
             out_r_ = *in_r;
-//            if (param_chance_[0]){
-//                out_l_ = bitCrush(*in_l, 50);
-//                out_r_ = bitCrush(*in_r, 50);
-//            }
-//            if (param_chance_[1]){
-//                out_l_ = waveFolder(out_l_, 100, 64);
-//                out_r_ = waveFolder(out_r_, 100, 64);
-//            }
+           if (param_chance_[0]){
+               out_l_ = bitCrush(*in_l, 50);
+               out_r_ = bitCrush(*in_r, 50);
+           }
+           if (param_chance_[1]){
+               out_l_ = waveFolder(out_l_, 100, 64);
+               out_r_ = waveFolder(out_r_, 100, 64);
+           }
             if (param_chance_[2]){
                 out_l_ = combFilter(out_l_, &buffer_index_l, in_samples_l, in_buffer_l);
                 out_r_ = combFilter(out_r_, &buffer_index_r, in_samples_r, in_buffer_r);
@@ -64,10 +64,10 @@ public:
                 out_l_ = ringMod(out_l_, tW_l, &phase_acc_l);
                 out_r_ = ringMod(out_r_, tW_r, &phase_acc_r);
             }
-//            if (param_chance_[4]){
-//                out_l_ = artifacts(out_l_);
-//                out_r_ = artifacts(out_r_);
-//            }
+           if (param_chance_[4]){
+               out_l_ = artifacts(out_l_);
+               out_r_ = artifacts(out_r_);
+           }
             out_l_ = Overdrive(out_l_) / 2; // reduce volume of FX to align with dry sound
             out_r_ = Overdrive(out_r_) / 2;
             *out_l = (out_l_ * pot_volume / vol_scaling) >> 7;
@@ -144,7 +144,7 @@ private:
         int16_t chance = rand() % 100;
         int32_t out = sample;
         if (chance < 2){
-//            out = -out; // semi harsh crackle
+           out = -out; // semi harsh crackle
             // out - out + dis(gen_) * 2; // White noise type crackle
             // flip_ = !flip_; // for the fully deciate below
         }
