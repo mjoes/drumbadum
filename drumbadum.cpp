@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
     minstd_rand gen{rd()};
     bool hits[3] = { 0, 0, 0};
     bool accent[3] = { 0, 0, 0};
+    bool stutter[3] = { 0, 0, 0};
     int16_t seq_buffer[3][16] = {0};
 
     // Input params
@@ -61,38 +62,62 @@ int main(int argc, char** argv) {
     uint8_t steps = 16; // 8, 16 or 32
     uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
     uint16_t steps_sample = bar_sample / steps;
-    // uint16_t glitch_sample = steps_sample / 4 + 1;
-    // uint16_t beat_sample = bar_sample / 4;
-
-    // Generate waveform samples and store them in a buffer
     uint8_t step = 0;
     uint16_t step_sample = 0;
-    uint8_t stutter = 0;
+
+    // Init stutter
+    uint32_t stutter_samples[2] = { (bar_sample / 16), (bar_sample / 32) };
+    uint16_t stutter_sample = 1;
+    bool stutter_bool = false;
+    uint8_t stutters_left = 0;
+
+    // Loop
     for (size_t i = 0; i < num_samples; ++i) {
-        // Check if trigger is hit
-        // disabling stutter
-        // if (step_sample % stutter_sample == 0 && stutter / 10 > 0) {
-        //     hits[stutter % 10]=1;
-        //     stutter -= 10;
-        // }
+        if (step_sample % stutter_sample == 0 && stutter_bool == true) {
+            hits[0] = stutter[0];
+            hits[1] = stutter[1];
+            hits[2] = stutter[2];
+            stutters_left--;
+            if (stutters_left == 0) {
+                stutter_bool = false;
+            }
+        } 
         if (step_sample == steps_sample){
             if (pot_seq_turing < 20 || pot_seq_turing > 80 ) {
                 for (int i = 0; i < 3; ++i) {
-                    hits[i] = seq_buffer[i][step]; // Access each element using array subscript notation
+                    hits[i] = seq_buffer[i][step]; 
                 }
-            } else {
+            } else if (stutter_bool == false) {
                 if (rhythms[pot_seq_1][step] == true){
                     drum_hit(pot_seq_2,pot_seq_3,step, hits, accent);
                 } 
                 else {
                     chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits, accent);
                 }
-                stutter = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits, accent);
+                artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits, accent);
 
+                // Save hits for "turing machine"
                 for (int i = 0; i < 3; ++i) {
                     seq_buffer[i][step] = hits[i];
                 }
-            }
+
+                // Stutter
+                if ((step + 1) % 4 == 1) {
+                    
+                    // // pot_xtra defines probability of stutter between 0 and ~0.15 based on pot_xtra
+                    stutter_bool = (rand() % 100) < (pot_xtra / 7);
+                    
+                    if (stutter_bool){
+                        stutters_left = (rand() % 4) + 1; // How many stutters in next cycle
+                        uint16_t index = (rand() % 2); // either 16 or 32th stutters
+                        stutter_sample = stutter_samples[index];
+                        for (int j = 0; j < 3; ++j) {
+                            stutter[j] = hits[j]; // Save current hit for the stutter
+                        }
+                    }
+                }
+                
+            } 
             step_sample = 0;
             ++step;
             if (step > 15) {
@@ -101,6 +126,9 @@ int main(int argc, char** argv) {
             if ((rand() % 100) < pot_xtra ) {
                 fx.set_start(steps_sample);
             } 
+
+
+
         }
         ++step_sample;
 
@@ -114,7 +142,7 @@ int main(int argc, char** argv) {
         if (hits[2] == 1) {
             hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent[2]);
         }
-
+        
         bass_drum_out = bass_drum.Process();
         hi_hat_out = hi_hat.Process();
         fm_out = fm.Process();

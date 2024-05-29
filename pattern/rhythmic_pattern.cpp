@@ -36,9 +36,8 @@ void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t st
     } 
 }
 
-uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, bool* hits, bool* accent) {
+void artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, bool* hits, bool* accent) {
     uint8_t sample = rand() % 100;
-    uint8_t glitch = 0;
     if (sample < knob_art) {
         uint8_t output = patterns[knob_1][16-step] * 3 / 100;
         uint8_t sample_rd = rand() % 100;
@@ -48,14 +47,7 @@ uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t
         }
         hits[output] = 1;
         accent[output] = 0;
-        
-        // Disable glitch
-        // int16_t prob_glitch = (knob_art - 94 ) * 5;
-        // if (sample_rd < prob_glitch) { // using sample_rd to avoid an extra rand() invocation
-        //     glitch = (rand() % 4) * 10 + output;
-        // }
     }
-    return glitch;
 }
 
 const uint8_t prob_hat[20] {
