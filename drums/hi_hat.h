@@ -55,7 +55,7 @@ public:
 
     void set_velocity(uint16_t velocity, bool accent) {
         if (accent == true) {
-            HH.velocity_ = 500;
+            HH.velocity_ = 1000;
         } else {
             HH.velocity_ = velocity;
         }
@@ -71,7 +71,7 @@ public:
     void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
         rel_pos_ = 0;
         running_ = true;
-        set_velocity(500, accent);
+        set_velocity(800, accent);
         set_pattern(pattern_nr, random_pattern_nr, randomness, accent);
 
         a0 = 32767 / (1 + lambda_ / 255); // 65,535
