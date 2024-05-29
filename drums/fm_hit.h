@@ -110,7 +110,7 @@ public:
         sample = GenerateSample(rel_env);
         sample = sample * FM.velocity_ / 1000;
         sample *= rel_env / 2;
-        int16_t output = sample / 32767; // Again rather cheeky :)
+        int16_t output = sample >> 15; // Again rather cheeky :)
 
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {

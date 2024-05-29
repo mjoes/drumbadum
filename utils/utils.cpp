@@ -2,11 +2,6 @@
 #include "rhythmic_pattern.h"
 #include <random>
 
-uint16_t cv_uniform(uint16_t lower, uint16_t upper) {
-    uint16_t range = upper - lower + 1;
-    return rand() % range + lower;
-}
-
 uint8_t snd_random(
         uint8_t value, 
         uint8_t random_pattern_nr, 
@@ -21,7 +16,7 @@ uint8_t snd_random(
             new_prb = ((100 << 5) - prb) * randomness / 50 + 2 * prb - (100 << 5);
         }
         new_prb >>= 5;
-        uint8_t out = (new_prb * cv_uniform(0,100) + (100 - new_prb) * value) / 100;
+        uint8_t out = (new_prb * (rand() % 101) + (100 - new_prb) * value) / 100;
         return out;
 }
 

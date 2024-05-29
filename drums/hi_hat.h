@@ -20,8 +20,7 @@ public:
         :
         sample_rate_(sample_rate),
         gen_(gen),
-        dis(0, 200),
-        dis_wn(-32767, 32767)
+        dis(0, 200)
 
         {
             rel_pos_ = 0;
@@ -105,10 +104,10 @@ public:
         }
 
         int32_t sample;
-        sample = bp_filter_2(dis_wn(gen_));
+        sample = bp_filter_2(rand() % 65535 - 32767);
         sample = (sample * HH.velocity_) / 1000;
-        sample *= interpolate_env(rel_pos_, length_decay_, lookup_table_);
-        int16_t output = sample / 65535;
+        interpolate_env_alt(&sample, rel_pos_, length_decay_, lookup_table_); 
+        int16_t output = sample;
 
         rel_pos_ += 1;
         if (rel_pos_ >= length_decay_) {
@@ -129,14 +128,13 @@ private:
     bool running_, decay_type_;
     minstd_rand& gen_;
     uniform_int_distribution<int16_t> dis;
-    uniform_int_distribution<int32_t> dis_wn;
     HiHatSculpt HH;
     Out out;
     Panning pan;
 
     int32_t bp_filter_2(int32_t x_n) {
         int32_t filtered = a0 * x_n - a0 * x_filter[1] - b1 * y_filter[0] - b2 * y_filter[1];
-        filtered /= 32767;
+        filtered >>= 15;
         y_filter[1] = y_filter[0];
         y_filter[0] = filtered;
         x_filter[1] = x_filter[0];

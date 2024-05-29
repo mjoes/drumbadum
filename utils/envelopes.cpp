@@ -1,35 +1,22 @@
 #include <stdio.h>
 #include "envelopes.h"
 
-float interpolate_env_old(uint32_t rel_pos, uint32_t length_decay, const uint16_t* lookup_table){
-    float pos = static_cast<float>(rel_pos) / (length_decay) * 256.0;
-    uint16_t int_pos = int(pos);
-    uint16_t output;
-    if (int_pos > 255) { //How to get rid of this if statement
-        output = 0;
-    } else {
-        float frac = pos - int_pos;
-        uint16_t a = lookup_table[int_pos];
-        uint16_t b = lookup_table[int_pos + 1];
-        output = a + frac * (b - a);
-    }
-    return output / 65535.0;
+uint16_t interpolate_env(uint32_t rel_pos, uint32_t length_decay, const uint16_t* lookup_table){
+    uint32_t pos_ = (rel_pos << 15) / length_decay << 8;
+    uint16_t int_pos = pos_ >> 15;
+    uint16_t a = lookup_table[int_pos];
+    uint16_t b = lookup_table[int_pos + 1];
+    uint16_t output = a + ((b - a) * (pos_ & ((1 << 15) - 1)) >> 15);
+    return output;
 }
 
-uint16_t interpolate_env(uint32_t rel_pos, uint32_t length_decay, const uint16_t* lookup_table){
-    uint32_t pos_ = (rel_pos << 15) / length_decay * 256;
-    // printf("pos is %d, %d, %f, %f\n", (pos_ >> 15), (pos_ & ((1 << 15) - 1)), ((double)(pos_ & ((1 << 15) - 1)) / (1 << 15)), pos);
+void interpolate_env_alt(int32_t* sample, uint32_t rel_pos, uint32_t length_decay, const uint16_t* lookup_table){
+    uint32_t pos_ = ((rel_pos << 15) / length_decay) << 8;
     uint16_t int_pos = pos_ >> 15;
-    uint16_t output;
-    if (int_pos > 255) { //How to get rid of this if statement
-        output = 0;
-    } else {
-        uint16_t a = lookup_table[int_pos];
-        uint16_t b = lookup_table[int_pos + 1];
-        output = a + ((b - a) * (pos_ & ((1 << 15) - 1)) >> 15);
-    }
-    // printf("intpos: %i, new: %i, old: %i\n", int_pos, output / 65535.0, output_ / 65535.0);
-    return output;
+    uint16_t a = lookup_table[int_pos];
+    uint16_t b = lookup_table[int_pos + 1];
+    uint16_t output = a + ((b - a) * (pos_ & ((1 << 15) - 1)) >> 15);
+    *sample = (*sample * output) >> 16;
 }
 
 const uint16_t lambda[] = {
@@ -755,7 +742,7 @@ const int16_t sine[] = {
 };
 
 const int16_t env_overdrive[] = {
-    -32767, -32764, -32755, -32740,
+    -32768, -32764, -32755, -32740,
     -32719, -32692, -32660, -32622,
     -32578, -32528, -32473, -32412,
     -32345, -32273, -32196, -32113,
@@ -818,7 +805,8 @@ const int16_t env_overdrive[] = {
     32113, 32196, 32273, 32345,
     32412, 32473, 32528, 32578,
     32622, 32660, 32692, 32719,
-    32740, 32755, 32764, 32767
+    32740, 32755, 32762, 32765,
+    32767
 };
 
 const int16_t beta_inv[] = {

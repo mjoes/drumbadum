@@ -5,21 +5,24 @@
 
 using namespace std;
 
-void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, int16_t* hits) {
+void drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t step, bool* hits, bool* accent) {
     // Probability of hits based on difference between pattern 1 and 2 is not equally distributed:
     // 4/9 for kick
     // 3/9 for fm hit
     // 2/9 for hihat 
     uint8_t hit_1 = patterns[knob_1][step];
     uint8_t hit_2 = patterns[50 - knob_2][step];
-    int16_t output = hit_1 * 3 / 100 - hit_2 * 3 / 100;
-    hits[abs(output)] = 1;
+    int16_t output = abs(hit_1 * 3 / 100 - hit_2 * 3 / 100);
     if (bernoulli_draw(patterns[knob_1][step])) { 
-        hits[hit_2 * 3 / 100] = 1;
+        uint8_t hit_2_id = hit_2 * 3 / 100;
+        hits[hit_2_id] = 1;
+        accent[hit_2_id] = 0;
     }
+    hits[output] = 1;
+    accent[output] = 1;
 }
 
-void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t step, int16_t* hits) {
+void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t step, bool* hits, bool* accent) {
     uint8_t prob = patterns[knob_1][step];
     if (rand() % 100 < prob - 10) { // tweak the prob-10 for how bare bones the beat should be
         uint8_t hit = patterns[knob_2][step] / 5;
@@ -29,10 +32,11 @@ void chance_drum_hit(uint8_t knob_1, uint8_t knob_2, uint8_t knob_rd, uint8_t st
             output %= 3;
         }
         hits[output] = 1;
+        accent[output] = 0;
     } 
 }
 
-uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, int16_t* hits) {
+uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t step, bool* hits, bool* accent) {
     uint8_t sample = rand() % 100;
     uint8_t glitch = 0;
     if (sample < knob_art) {
@@ -43,6 +47,7 @@ uint8_t artifacts_hit(uint8_t knob_1, uint8_t knob_rd, uint8_t knob_art, uint8_t
             output %= 3;
         }
         hits[output] = 1;
+        accent[output] = 0;
         
         // Disable glitch
         // int16_t prob_glitch = (knob_art - 94 ) * 5;
