@@ -15,20 +15,21 @@ using namespace std;
 int main(int argc, char** argv) {
     random_device rd{};
     minstd_rand gen{rd()};
-    int16_t hits[3] = { 0, 0, 0};
+    bool hits[3] = { 0, 0, 0};
+    bool accent[3] = { 0, 0, 0};
     int16_t seq_buffer[3][16] = {0};
 
     // Input params
-    uint8_t pot_seq_1 = pot_map(300,5);
-    uint8_t pot_seq_2 = pot_map(600,50);
-    uint8_t pot_seq_3 = pot_map(400,50);
+    uint8_t pot_seq_1 = pot_map(100,5);
+    uint8_t pot_seq_2 = pot_map(900,50);
+    uint8_t pot_seq_3 = pot_map(200,50);
     uint8_t pot_seq_rd = pot_map(100,100);
     uint8_t pot_seq_art = pot_map(400,100);
     uint8_t pot_seq_turing = pot_map(500,100);
     uint8_t pot_snd_1 = pot_map(300,50);
     uint8_t pot_snd_2 = 50 - pot_map(600,50);
     uint8_t pot_snd_bd = pot_map(900,100);
-    uint8_t pot_snd_hh = pot_map(900,100);
+    uint8_t pot_snd_hh = pot_map(800,100);
     uint8_t pot_snd_fm = pot_map(10,100);
     uint8_t pot_xtra = pot_map(0,100);
     uint8_t pot_volume = pot_map(1000,100);
@@ -67,7 +68,6 @@ int main(int argc, char** argv) {
     uint8_t step = 0;
     uint16_t step_sample = 0;
     uint8_t stutter = 0;
-    bool accent = false;
     for (size_t i = 0; i < num_samples; ++i) {
         // Check if trigger is hit
         // disabling stutter
@@ -82,14 +82,12 @@ int main(int argc, char** argv) {
                 }
             } else {
                 if (rhythms[pot_seq_1][step] == true){
-                    drum_hit(pot_seq_2,pot_seq_3,step, hits);
-                    accent = true;
+                    drum_hit(pot_seq_2,pot_seq_3,step, hits, accent);
                 } 
                 else {
-                    chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits);
-                    accent = false;
+                    chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits, accent);
                 }
-                stutter = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits);
+                stutter = artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits, accent);
 
                 for (int i = 0; i < 3; ++i) {
                     seq_buffer[i][step] = hits[i];
@@ -108,13 +106,13 @@ int main(int argc, char** argv) {
 
         // Generate waveform sample
         if (hits[0] == 1) {
-            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent);
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent[0]);
         }
         if (hits[1] == 1) {
-            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent);
+            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent[1]);
         }
         if (hits[2] == 1) {
-            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent);
+            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent[2]);
         }
 
         bass_drum_out = bass_drum.Process();
