@@ -5,9 +5,9 @@
 #include "rhythmic_pattern.h"
 
 
-class FX {
+class Effects {
 public:
-    FX(
+    Effects(
         uint16_t sample_rate,
         minstd_rand& gen)
         :
@@ -27,7 +27,7 @@ public:
             tW_l = max_bit_ / sample_rate_ * ring_freq_l;
             tW_r = max_bit_ / sample_rate_ * ring_freq_r;
         }
-    ~FX() {}
+    ~Effects() {}
 
     void set_start(uint16_t steps_sample) {
         running_ = true;
@@ -36,7 +36,6 @@ public:
         param_id_ = rand() % 50;
         for (uint8_t i = 0; i < 5; i++){
             param_chance_[i] = (dis_u(gen_) < patterns[param_id_][i]);
-            // printf("%i\n", param_chance_[i]);
         }
     }
 
