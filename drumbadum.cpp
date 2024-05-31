@@ -5,6 +5,8 @@
 #include "drums/hi_hat.h"
 #include "drums/fm_hit.h"
 #include "drums/fx.h"
+#include "drums/sequencer.h"
+#include "global.h"
 #include "rhythmic_pattern.h"
 #include "utils.h"
 #include <random>
@@ -15,31 +17,10 @@ using namespace std;
 int main(int argc, char** argv) {
     random_device rd{};
     minstd_rand gen{rd()};
-    bool hits[3] = { 0, 0, 0};
-    bool accent[3] = { 0, 0, 0};
-    bool stutter[3] = { 0, 0, 0};
-    int16_t seq_buffer[3][16] = {0};
 
     // Input params
-    uint8_t pot_seq_1 = pot_map(100,5);
-    uint8_t pot_seq_2 = pot_map(900,50);
-    uint8_t pot_seq_3 = pot_map(200,50);
-    uint8_t pot_seq_rd = pot_map(100,100);
-    uint8_t pot_seq_art = pot_map(400,100);
-    uint8_t pot_seq_turing = pot_map(500,100);
-    uint8_t pot_snd_1 = pot_map(300,50);
-    uint8_t pot_snd_2 = 50 - pot_map(600,50);
-    uint8_t pot_snd_bd = pot_map(900,100);
-    uint8_t pot_snd_hh = pot_map(800,100);
-    uint8_t pot_snd_fm = pot_map(10,100);
-    uint8_t pot_xtra = pot_map(0,100);
-    uint8_t pot_volume = pot_map(1000,100);
     const uint16_t duration = 10;
-    const uint8_t bpm = 130;
-
-    // uint8_t shift_ = 14;
-    // uint16_t pos_ = (43231 << shift_) / 33123;
-    // printf("pos is %d, %f\n", (pos_ >> shift_), ((double)(pos_ & ((1 << shift_) - 1)) / (1 << shift_)));
+    const uint8_t bpm = 120;
 
     // Init variables
     const uint16_t sample_rate = 44100;
@@ -56,91 +37,34 @@ int main(int argc, char** argv) {
     HiHat hi_hat(sample_rate, gen);
     BassDrum bass_drum(sample_rate, gen);
     FmHit fm(sample_rate, gen);
-    FX fx(sample_rate, gen);
+    Effects FX(sample_rate, gen);
+    Sequencer SQ;
+    
 
     // Initialize sequencer
     uint8_t steps = 16; // 8, 16 or 32
     uint32_t bar_sample = (60 * sample_rate * 4) / (bpm);
     uint16_t steps_sample = bar_sample / steps;
-    uint8_t step = 0;
-    uint16_t step_sample = 0;
 
     // Init stutter
-    uint32_t stutter_samples[2] = { (bar_sample / 16), (bar_sample / 32) };
-    uint16_t stutter_sample = 1;
-    bool stutter_bool = false;
-    uint8_t stutters_left = 0;
+    SQ.set_stutter_samples(bar_sample);
 
     // Loop
     for (size_t i = 0; i < num_samples; ++i) {
-        if (step_sample % stutter_sample == 0 && stutter_bool == true) {
-            hits[0] = stutter[0];
-            hits[1] = stutter[1];
-            hits[2] = stutter[2];
-            stutters_left--;
-            if (stutters_left == 0) {
-                stutter_bool = false;
-            }
-        } 
-        if (step_sample == steps_sample){
-            if (pot_seq_turing < 20 || pot_seq_turing > 80 ) {
-                for (int i = 0; i < 3; ++i) {
-                    hits[i] = seq_buffer[i][step]; 
-                }
-            } else if (stutter_bool == false) {
-                if (rhythms[pot_seq_1][step] == true){
-                    drum_hit(pot_seq_2,pot_seq_3,step, hits, accent);
-                } 
-                else {
-                    chance_drum_hit(pot_seq_2, pot_seq_3, pot_seq_rd, step, hits, accent);
-                }
-                artifacts_hit(pot_seq_2, pot_seq_rd, pot_seq_art, step, hits, accent);
-
-                // Save hits for "turing machine"
-                for (int i = 0; i < 3; ++i) {
-                    seq_buffer[i][step] = hits[i];
-                }
-
-                // Stutter
-                if ((step + 1) % 4 == 1) {
-                    
-                    // // pot_xtra defines probability of stutter between 0 and ~0.15 based on pot_xtra
-                    stutter_bool = (rand() % 100) < (pot_xtra / 7);
-                    
-                    if (stutter_bool){
-                        stutters_left = (rand() % 4) + 1; // How many stutters in next cycle
-                        uint16_t index = (rand() % 2); // either 16 or 32th stutters
-                        stutter_sample = stutter_samples[index];
-                        for (int j = 0; j < 3; ++j) {
-                            stutter[j] = hits[j]; // Save current hit for the stutter
-                        }
-                    }
-                }
-                
-            } 
-            step_sample = 0;
-            ++step;
-            if (step > 15) {
-                step = 0;
-            }
-            if ((rand() % 100) < pot_xtra ) {
-                fx.set_start(steps_sample);
-            } 
-
-
-
-        }
-        ++step_sample;
+        SQ.run_sequencer(true, false, steps_sample);
 
         // Generate waveform sample
-        if (hits[0] == 1) {
-            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, accent[0]);
+        if (SQ.hits[0] == 1) {
+            fm.set_start(pot_snd_1, pot_snd_2, pot_snd_fm, SQ.accent[0]);
         }
-        if (hits[1] == 1) {
-            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, accent[1]);
+        if (SQ.hits[1] == 1) {
+            bass_drum.set_start(pot_snd_1, pot_snd_2, pot_snd_bd, SQ.accent[1]);
         }
-        if (hits[2] == 1) {
-            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, accent[2]);
+        if (SQ.hits[2] == 1) {
+            hi_hat.set_start(pot_snd_1, pot_snd_2, pot_snd_hh, SQ.accent[2]);
+        }
+        if (SQ.FX_flag) {
+            FX.set_start(steps_sample);
         }
         
         bass_drum_out = bass_drum.Process();
@@ -150,11 +74,8 @@ int main(int argc, char** argv) {
         out_l = (bass_drum_out.out_l * 10 + hi_hat_out.out_l * 20 + fm_out.out_l * 8)/30;
         out_r = (bass_drum_out.out_r * 10 + hi_hat_out.out_r * 20 + fm_out.out_r * 8)/30;
         
-        fx.Process(&left_samples[i], &right_samples[i], &out_l, &out_r, pot_volume, 5);
-
-        for (int i = 0; i < 3; ++i) {
-            hits[i] = 0; // Access each element using array subscript notation
-        }
+        FX.Process(&left_samples[i], &right_samples[i], &out_l, &out_r, pot_volume, 5);
+        SQ.reset_hits();
     }
 
     // Write buffer to a raw file
