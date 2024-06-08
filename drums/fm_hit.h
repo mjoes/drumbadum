@@ -46,7 +46,7 @@ public:
     }
 
     void set_frequency(uint8_t frequency) {
-        FM.frequency_ = beta_inv[frequency]; 
+        FM.frequency_ = beta_inv[frequency];
     }
 
     void set_velocity(uint16_t velocity, bool accent) {
@@ -83,7 +83,7 @@ public:
 
     void set_panning(uint8_t threshold, uint8_t amount) {
         // threshold sets how often we trigger random panning
-        // amount sets how much panning 
+        // amount sets how much panning
         int16_t pan_amount = 0;
         if (dis(gen_) > threshold) {
             pan_amount = (dis(gen_) - 100) * amount / 100;
@@ -97,7 +97,7 @@ public:
         }
     }
 
-    Out Process() {
+    Out Process(uint8_t volume) {
         // Generate waveform sample
         if (running_ == false) {
             out.out_l = 0;
@@ -106,11 +106,13 @@ public:
         }
 
         int32_t sample;
+        int16_t output;
         uint16_t rel_env = interpolate_env(rel_pos_, length_decay_, exp_env);
         sample = GenerateSample(rel_env);
         sample = sample * FM.velocity_ / 1000;
         sample *= rel_env / 2;
-        int16_t output = sample >> 15; // Again rather cheeky :)
+        output = sample >> 15; // Again rather cheeky :)
+        output = (output * volume) >> 7;
 
         rel_pos_ += 1;
         if (rel_pos_ >= end_i_) {
@@ -118,7 +120,7 @@ public:
         }
         out.out_l = output * pan.pan_l / 100;
         out.out_r = output * pan.pan_r / 100;
-        return out;   
+        return out;
     }
 
 private:
@@ -149,7 +151,7 @@ private:
         int16_t a = sine[phase_inc];
         int16_t b = sine[phase_inc + 1];
         int16_t base_sample = a + ((b - a) * (fraction_fp) >> (32 - bitsSine));
-        
+
         return base_sample;
     }
 };

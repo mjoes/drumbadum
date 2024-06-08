@@ -9,7 +9,7 @@ public:
     bool hits[3] = {};
     bool accent[3] = {};
     bool FX_flag = false;
-    volatile uint8_t step = 0;
+    bool LED_flag = false;
     uint32_t stutter_samples[2] = {};
 
     void reset_hits() {
@@ -18,12 +18,12 @@ public:
         }
     }
 
-    void set_stutter_samples(uint32_t bar_sample) { 
-        stutter_samples[0] = bar_sample / 16;
-        stutter_samples[1] = bar_sample / 32;
+    void set_stutter_samples(uint32_t steps_sample) {
+        stutter_samples[0] = steps_sample;
+        stutter_samples[1] = steps_sample / 2;
     }
 
-    void run_sequencer(bool run, bool sync, uint16_t steps_sample){
+    void run_sequencer(bool sync, bool runnn, uint16_t steps_sample){
         bool active_seq = true;
         FX_flag = false;
         if (sync == true){
@@ -56,7 +56,7 @@ public:
                 normal_hit();
             }
 
-            set_stutter(step);
+            set_stutter(step, runnn);
 
             step_sample = 0;
             ++step;
@@ -69,6 +69,7 @@ public:
         }
         ++step_sample;
     }
+
 private:
     uint16_t stutter_sample = 1;
     uint8_t stutters_left = 0;
@@ -77,8 +78,11 @@ private:
     int16_t seq_buffer[3][16] = {};
 
     // Stutter & LED
-    void set_stutter(uint8_t step) {
-        if ((step + 1) % 4 == 1) {
+    void set_stutter(uint8_t step, bool runn) {
+        if ((step + 1) % 4 == 1 && runn == true) {
+        	LED_flag = true; // For the BPM led
+        	hits[1] = 1;
+
             // // pot_xtra defines probability of stutter between 0 and 0.1 based on pot_xtra
             stutter_flag = (rand() % 100) < (pot_xtra / 7);
 
@@ -90,6 +94,8 @@ private:
                     stutter[j] = hits[j]; // Save current hit for the stutter
                 }
             }
+        } else {
+        	LED_flag = false;
         }
     }
 

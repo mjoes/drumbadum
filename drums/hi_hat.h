@@ -65,7 +65,7 @@ public:
         // range is defined in the lambda lookup table from 300-3300
         // OLD --> HH.bandwidth_ = bandwidth * 3000 / 100 + 300; //range from 300-3300;
         uint16_t index = (bandwidth) * 256 / 100;
-        lambda_ = lambda[index]; // 
+        lambda_ = lambda[index]; //
     }
 
     void set_start(uint8_t pattern_nr, uint8_t random_pattern_nr, uint8_t randomness, bool accent) {
@@ -81,7 +81,7 @@ public:
 
     void set_panning(uint8_t threshold, uint8_t amount) {
         // threshold sets how often we trigger random panning
-        // amount sets how much panning 
+        // amount sets how much panning
         int16_t pan_amount = 0;
         if (dis(gen_) > threshold) {
             pan_amount = (dis(gen_)) * amount / 100;
@@ -95,7 +95,7 @@ public:
         }
     }
 
-    Out Process() {
+    Out Process(uint8_t volume) {
         // Generate waveform sample
         if (running_ == false) {
             out.out_l = 0;
@@ -106,8 +106,8 @@ public:
         int32_t sample;
         sample = bp_filter_2(rand() % 65535 - 32767);
         sample = (sample * HH.velocity_) / 1000;
-        interpolate_env_alt(&sample, rel_pos_, length_decay_, lookup_table_); 
-        int16_t output = sample;
+        interpolate_env_alt(&sample, rel_pos_, length_decay_, lookup_table_);
+        int16_t output = (sample * volume) >> 7;
 
         rel_pos_ += 1;
         if (rel_pos_ >= length_decay_) {
@@ -115,7 +115,7 @@ public:
         }
         out.out_l = output * pan.pan_l / 100;
         out.out_r = output * pan.pan_r / 100;
-        return out;         
+        return out;
     }
 
 private:
@@ -142,4 +142,3 @@ private:
         return filtered;
     }
 };
-
