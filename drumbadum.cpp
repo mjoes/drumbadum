@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     // Loop
     for (size_t i = 0; i < num_samples; ++i) {
-        SQ.run_sequencer(true, false, steps_sample);
+        SQ.run_sequencer(false, true, steps_sample);
 
         // Generate waveform sample
         if (SQ.hits[0] == 1) {
@@ -67,9 +67,9 @@ int main(int argc, char** argv) {
             FX.set_start(steps_sample);
         }
         
-        bass_drum_out = bass_drum.Process();
-        hi_hat_out = hi_hat.Process();
-        fm_out = fm.Process();
+        bass_drum_out = bass_drum.Process(pot_vol_bd);
+        hi_hat_out = hi_hat.Process(pot_vol_hh);
+        fm_out = fm.Process(pot_vol_fm);
 
         out_l = (bass_drum_out.out_l * 10 + hi_hat_out.out_l * 20 + fm_out.out_l * 8)/30;
         out_r = (bass_drum_out.out_r * 10 + hi_hat_out.out_r * 20 + fm_out.out_r * 8)/30;

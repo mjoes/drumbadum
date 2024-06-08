@@ -19,15 +19,15 @@ class BassDrum {
 public:
     BassDrum(
         uint16_t sample_rate,
-        minstd_rand& gen) 
-        : 
+        minstd_rand& gen)
+        :
         max_bit_(4294967295),
         sample_rate_(sample_rate),
         flutter_(3),
         bitsSine(10),
         gen_(gen)
         {
-            rel_pos_ = 0; 
+            rel_pos_ = 0;
             // set_attack(0);
         }
     ~BassDrum() {}
@@ -37,7 +37,7 @@ public:
             randomness = 0;
         }
         set_frequency(snd_random(patterns[pattern_nr][1],random_pattern_nr,1,randomness));
-        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 8) / 30 + (1 << 8); 
+        BD.overdrive_ = (snd_random(patterns[pattern_nr][2],random_pattern_nr,2,randomness) << 8) / 30 + (1 << 8);
         set_harmonics((snd_random(patterns[pattern_nr][3],random_pattern_nr,3,randomness) * 10) << 8);
         BD.length_decay_ = (snd_random(patterns[pattern_nr][4],random_pattern_nr,4,randomness) * 10) * sample_rate_ / 400;
         set_envelope(snd_random(patterns[pattern_nr][5],random_pattern_nr,5,randomness)); // Envelope needed fixing, but cannot use current solution
@@ -49,7 +49,7 @@ public:
     }
 
     void set_overdrive(uint16_t overdrive) {
-        BD.overdrive_ = (overdrive << 4) / 200 + (1 << 4); 
+        BD.overdrive_ = (overdrive << 4) / 200 + (1 << 4);
     }
 
     void set_velocity(uint16_t velocity, bool accent) {
@@ -90,7 +90,7 @@ public:
         rel_pos_ = 0;
         phase_acc = 0;
         running_ = true;
-        
+
         for (int i = 0; i < 3; ++i) {
             flutter_[i] = d(gen_);
         }
@@ -99,7 +99,7 @@ public:
         end_i_ = BD.length_decay_;
     }
 
-    Out Process() {
+    Out Process(uint8_t volume) {
         // Generate waveform sample
         if (running_ == false) {
             out.out_l = 0;
@@ -110,18 +110,18 @@ public:
         sample = GenerateSample();
         // sample += GenerateHarmonics();
         sample = (sample * BD.velocity_) >> 10; //  /1024
-        interpolate_env_alt(&sample, rel_pos_, BD.length_decay_, exp_env); 
-        int16_t output = Overdrive(sample);
-        
+        interpolate_env_alt(&sample, rel_pos_, BD.length_decay_, exp_env);
+        int16_t output = (Overdrive(sample) * volume) >> 7;
+
         rel_pos_ += 1;
 
         if (rel_pos_ >= end_i_) {
             running_ = false;
         }
-        
+
         out.out_l = output;
         out.out_r = output;
-        return out;          
+        return out;
     }
 
 private:
@@ -129,7 +129,7 @@ private:
     const uint32_t max_bit_;
     const uint16_t sample_rate_;
     const uint16_t* lookup_table_;
-    vector<int16_t> flutter_; 
+    vector<int16_t> flutter_;
     bool running_;
     const uint8_t bitsSine;
     minstd_rand& gen_;
@@ -142,10 +142,10 @@ private:
         int32_t overdriven_value = (value * BD.overdrive_) >> 8;
         if (overdriven_value <= -32768) {
             clipped_value = -32768;
-        } 
+        }
         else if (overdriven_value >= 32767) {
             clipped_value = 32767;
-        } 
+        }
         else {
             uint32_t scaled_ov = overdriven_value + (1 << 15);
             scaled_ov <<= 7;
@@ -158,7 +158,7 @@ private:
         // clipped_value = 0.5 * (fabs(overdriven_value + 32767) - fabs(overdriven_value - 32767));
         return clipped_value;
     }
-            
+
     int16_t GenerateSample() {
         // uint16_t pos_ = (rel_pos_ << 15) / BD.period_;
         // uint16_t int_pos = (pos_ & ((1 << 15) - 1)) * 1024 / (1 << 15);
@@ -167,7 +167,7 @@ private:
         // int16_t sample = a + (b - a) * (pos_ & ((1 << 15) - 1) >> 15);
 
         if ((inst_freq_ >> 15) >= BD.frequency_) {
-            inst_freq_ = inst_freq_ - d_freq_; 
+            inst_freq_ = inst_freq_ - d_freq_;
             // printf("%i, %i \n", (d_freq_ >> 15), (inst_freq_ >> 15));
         }
         tW_ = max_bit_ / sample_rate_ * (inst_freq_ >> 15);
@@ -188,7 +188,7 @@ private:
     //     int16_t a = sine[int_pos];
     //     int16_t b = sine[int_pos + 1];
     //     int16_t base_sample = a + (b - a) * (pos_ & ((1 << 15) - 1) >> 15);
-        
+
     //     return base_sample / scale_factor;
     // }
 
